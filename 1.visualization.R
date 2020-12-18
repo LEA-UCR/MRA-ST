@@ -32,6 +32,9 @@ plot1 <- ggplot(ts_Regional1998) +             # plot points
   col_scale(name = "Temperatura (°C)") +
   xlab("Longitud") +             # x-axis label
   ylab("Latitud") +              # y-axis label
+  labs(title = "Monzón Norteamericano: Temperatura mensual 1998", 
+       subtitle = "", 
+       caption = "Fuente: datos de NARCCAP") +
   geom_path(data = map_data("worldHires"),   # add map
             aes(x = long, y = lat, group = group), 
             col=1) +
