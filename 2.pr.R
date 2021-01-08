@@ -47,19 +47,45 @@ y5<-ts(datos.ts[5,,"Y"]$Y,frequency = 12, start=c(1981,1))
 
 datos.ts<- cbind(y1,y2,y3,y4,y5)
 
-autoplot(datos.ts)
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("prec_lineal", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
+
+autoplot(datos.ts, xlab = "Tiempo", ylab = "Precipitación") +
+  scale_colour_discrete("Locación", labels = c("1", "2", "3","4","5"))
+
+dev.off()
+
 autoplot(datos.ts, facets = TRUE)
 
 round(corr<-cor(datos.ts),2)
 corrplot(corr, method="circle")
 
-par(mfrow=c(2,3))
-acf(y1,lag.max=50,ci=0.95)
-acf(y2,lag.max=50,ci=0.95)
-acf(y3,lag.max=50,ci=0.95)
-acf(y4,lag.max=50,ci=0.95)
-acf(y5,lag.max=50,ci=0.95)
 
+p1<-ggAcf(y1, lag.max = 50) + ggtitle("Locación 1")
+p2<-ggAcf(y2, lag.max = 50) + ggtitle("Locación 2")
+p3<-ggAcf(y3, lag.max = 50) + ggtitle("Locación 3")
+p4<-ggAcf(y4, lag.max = 50) + ggtitle("Locación 4")
+p5<-ggAcf(y5, lag.max = 50) + ggtitle("Locación 5")
+
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("prec_acf", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
+
+grid.arrange(p1, p2, p3, p4, p5, nrow = 3)
+dev.off()
 
 # Location 1 --------------------------------------------------------------
 
@@ -72,35 +98,16 @@ ts.plot(y4)
 acf(y4,lag.max=500,ci=0.95)
 pacf(y4,lag.max=500,ci=0.95)
 
-#diff 1
-dy1<-diff(y1)
-ts.plot(dy1)
-acf(dy1,lag.max=500,ci=0.95)
-pacf(dy1,lag.max=500,ci=0.95)
-
-adj_y1 = y1 - mean(y1)
-adj_y1.fd = fracdiff(adj_y1, nar=0, nma=0, M=30)
-adj_y1.fd$d  # = 0.09
-adj_y1.fd$stderror.dpq  
-
-res.fd = diffseries(y1, d=adj_y1.fd$d)       # frac diff resids            
-res.arima = resid(arima(y1, order=c(1,1,1))) # arima resids
-
-
-par(mfrow=c(2,1))  
-acf(res.fd, 500, ylim=c(-.2,.2), main="frac diff resids")
-acf(res.arima, 500, ylim=c(-.2,.2), main="arima resids")
-
-
 ##
 library(arfima)
 summary(y1.fd <- arfima::arfima(y1))  
 summary(y1.fd)$coef
 
-
-# GPH estimate with big bandwidth or else estimate sucks
-fdGPH(y1, bandw=.9)   # m = n^bandw
-
+fdGPH(y1, bandw=.9)   
+fdGPH(y2, bandw=.9)
+fdGPH(y3, bandw=.9)
+fdGPH(y4, bandw=.9)
+fdGPH(y5, bandw=.9)
 
 # Spectral Analysis
 par(mfrow=c(1,2))

@@ -47,22 +47,44 @@ y5<-ts(datos.ts[5,,"Y"]$Y,frequency = 12, start=c(1981,1))
 
 datos.ts<- cbind(y1,y2,y3,y4,y5)
 
-#pdf("grafico_pagina3.pdf")
-autoplot(datos.ts)
-#dev.off()
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("temp_lineal", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
+
+autoplot(datos.ts, xlab = "Tiempo", ylab = "temperatura") +
+  scale_colour_discrete("Locación", labels = c("1", "2", "3","4","5"))
+
+dev.off()
 
 autoplot(datos.ts, facets = TRUE)
 
 round(corr<-cor(datos.ts),2)
 corrplot(corr, method="circle")
 
-par(mfrow=c(2,3))
-acf(y1,lag.max=50,ci=0.95)
-acf(y2,lag.max=50,ci=0.95)
-acf(y3,lag.max=50,ci=0.95)
-acf(y4,lag.max=50,ci=0.95)
-acf(y5,lag.max=50,ci=0.95)
+p1<-ggAcf(y1, lag.max = 50) + ggtitle("Locación 1")
+p2<-ggAcf(y2, lag.max = 50) + ggtitle("Locación 2")
+p3<-ggAcf(y3, lag.max = 50) + ggtitle("Locación 3")
+p4<-ggAcf(y4, lag.max = 50) + ggtitle("Locación 4")
+p5<-ggAcf(y5, lag.max = 50) + ggtitle("Locación 5")
 
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("temp_acf", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
+
+grid.arrange(p1, p2, p3, p4, p5, nrow = 3)
+dev.off()
 
 # Location 1 --------------------------------------------------------------
 
@@ -85,18 +107,29 @@ fdGPH(y1, bandw=.9)
 
 
 # Spectral analysis
+y<-y1
 
 par(mfrow=c(1,2))
-raw.spec1 <- spec.pgram(y1, taper = 0)
-plot(raw.spec1, log = "no")
+raw.spec <- spec.pgram(y, taper = 0)
+plot(raw.spec, log = "no")
 
-max(raw.spec1$spec)
-(freq<-raw.spec1$freq[(raw.spec1$spec==max(raw.spec1$spec))])
-(periodo<-1/freq)
+tabla <- data.frame(freq=raw.spec$freq,spec=raw.spec$spec)
+head(arrange(tabla,desc(spec)))
+periodo <- 1/head(arrange(tabla,desc(spec)))[,1]*12
+periodo
 
-ts.plot(datos.ts, col=1:9)
-spec = mvspec(datos.ts, spans=c(3,3), taper=.1)
 
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("temp_period", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
+spec = mvspec(datos.ts, spans=c(3,3), taper=.1,main="")
+dev.off()
 
 # Wavelets analysis
 
@@ -119,8 +152,21 @@ my.w5 <- analyze.wavelet(datos.ts, "y5",loess.span = 0,
                          dt = 1, dj = 1/250,lowerPeriod = 1,
                          upperPeriod = 100,make.pval = TRUE, n.sim = 10)
 
+
+
+Cairo::Cairo(
+  15, #length
+  15, #width
+  file = paste("temp1_wavelet", ".png", sep = ""),
+  type = "png", #tiff
+  bg = "transparent", #white or transparent depending on your requirement 
+  dpi = 300,
+  units = "cm" #you can change to pixels etc 
+)
 wt.image(my.w1, color.key = "quantile", n.levels = 250,
          legend.params = list(lab = "wavelet power levels", mar = 4.7))
+dev.off()
+
 wt.image(my.w2, color.key = "quantile", n.levels = 250,
          legend.params = list(lab = "wavelet power levels", mar = 4.7))
 wt.image(my.w3, color.key = "quantile", n.levels = 250,
