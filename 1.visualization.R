@@ -48,14 +48,6 @@ plot1
 
 # Algunos gráficos para la página -----------------------------------------
 
-pdf("grafico_pagina2.pdf")
-print(plot1)
-dev.off()
-
-png(file = "mapa1.png", bg = "transparent")
-print(plot1)
-dev.off()
-
 library(Cairo)
 Cairo::Cairo(
   30, #length
@@ -69,4 +61,44 @@ Cairo::Cairo(
 print(plot1)
 dev.off()
 
+
+# -------------------------------------------------------------------------
+
+ts_Regional <- ts_Regional %>% arrange(Year,Month,lat,lon) %>% 
+  mutate(ID = group_indices(., lon, lat)) %>% 
+  mutate(date = group_indices(., Year, Month))
+
+ts_spatial <- group_by(ts_Regional, lat, lon) %>%    
+  summarise(mu_temp = mean(ts))     
+
+## ------------------------------------------------------------------------
+
+#temp by latitude
+lat_means <- ggplot(ts_spatial) +
+  geom_point(aes(lat, mu_temp)) +
+  xlab("Latitude (deg)") +
+  ylab("temperature") + theme_bw()
+lat_means
+
+#temp by longitude
+lon_means <- ggplot(ts_spatial) +
+  geom_point(aes(lon, mu_temp)) +
+  xlab("Longitude (deg)") +
+  ylab("temperature") + theme_bw()
+lon_means
+
+## ------------------------------------------------------------------------
+ts_temporal <- group_by(ts_Regional, date) %>%    
+  summarise(mu_temp = mean(ts))     
+head(ts_temporal)
+
+temporal_plot <-
+  ggplot() +
+  geom_line(data = ts_Regional ,aes(x = date, y = ts, group = ID),
+            colour = "blue", alpha = 0.04) +
+  geom_line(data = ts_temporal, aes(x = date, y = mu_temp)) +
+  xlab("Month") + ylab("Temperature") +
+  theme_bw()
+
+temporal_plot
 
