@@ -53,5 +53,5 @@ class(hh)
 proj4string(hh) <- '+proj=longlat +datum=WGS84'
 bordes <- bbox(hh)
 
-save(dataset, hh, file=paste0(variable_narccap,"_mensual.Rdata"))
+#save(dataset, hh, file=paste0(variable_narccap,"_mensual.Rdata"))
 
