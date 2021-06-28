@@ -17,7 +17,7 @@ VARNAME = "V"
 
 blatitude <- c(19.12639, 74.40000)
 blongitude <- c(198.6576, 326.4000)
-dirbase <- "~/../Emuladores/datos/datosglobal/"
+dirbase <- "~/../Emuladores/datos/datosglobal_update14062021/"
 listfilesg <- list.files(path = dirbase, 
                          pattern=paste0("*.",VARNAME,".*.nc"))   
 #fecha <- '1870-01-01'
