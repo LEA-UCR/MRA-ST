@@ -1,0 +1,15 @@
+### packages
+
+library(tidyverse)
+library(MCMCpack)
+library(truncdist)
+library(invgamma)
+library(Matrix)
+library(mvtnorm)
+library(truncnorm)
+library(CholWishart)
+library(tmvtnorm)
+library(tictoc)
+library(fields)
+library(nngeo)
+library(maptools)
