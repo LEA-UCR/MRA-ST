@@ -3,7 +3,7 @@ library(ezknitr)
 
 #resumen de cada simulacion
 
-for(i in 1:9){
+for(i in 6:9){
   model <- "MRA1" # "MRA2"
   type <- "Exponential" # "Matern"
   nres <- 2
