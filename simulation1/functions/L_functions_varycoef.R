@@ -1,0 +1,56 @@
+## L functions 
+
+
+f_P_tau_varycoef <- function(beta,A2,Phi,tau,m2loglike_old,
+                    Phi_m,tau_m,sd_Phi,sd_tau,status,type1,type2,taper=0.1){
+  if(status=='new'){
+    
+    control <- SVC_mle_control(extract_fun = T,
+                               tapering = taper,
+                               init = c(Phi,1,
+                                        tau,
+                                        beta
+                               ),
+                               #lower= rep(1e-6,5),
+                               lower= c(rep(1e-6,4),-5),
+                               upper = rep(100,5))
+    VC.fit <- SVC_mle(y = Y, X = X, W = XR, locs = locs,
+                      control = control)
+    m2loglike_prop<- do.call(n2LL.my,
+                             c(list(x = control$init), VC.fit$args))
+    
+    m2logv <- m2loglike_prop$m2logv
+    SigmaYinv <- m2loglike_prop$SigmaYinv
+    logSigmaYdet <- m2loglike_prop$logSigmaYdet
+    muhat <- m2loglike_prop$muhat
+  }else{
+    m2logv <- m2loglike_old
+  }
+  logpriorphi   <- sum(dunif(Phi,0,10,log=TRUE)) 
+  logpriortau <- dinvgamma(tau,shape = 2,scale = 100,log = T)
+  logpriornu    <- dunif(Nu,0,3,log=TRUE)    #
+  #TYPE HERE
+  if(type1=='Exponential'){
+    logprior <- logpriorphi+logpriortau
+  }else{
+    logprior <- logpriorphi+logpriornu+logpriortau
+  }
+  logproposal <- log(dtruncnorm(Phi[1],a = 0,
+                                b = 10,mean = Phi_m[1],sd = sd_Phi[1]))
+  #  logproposal <- logproposal + log(dtruncnorm(Phi[2],
+  #                                              a = 500,b = 3500,mean = Phi_m[2],sd = sd_Phi[2]))
+  #logproposal <- logproposal + dgamma(tau,shape = tau_m/sd_tau,scale = sd_tau)
+  logproposal <- logproposal + log(dtruncnorm(tau,
+                                              a = 0,b = 3,mean = tau_m,sd = sd_tau))
+  like <- -(m2logv/2) +logprior + logproposal
+  
+  if(status=='new'){
+    f_result <- list(like=as.numeric(like),m2logv=m2logv,
+                     SigmaYinv=SigmaYinv,logSigmaYdet=logSigmaYdet,
+                     muhat=muhat)
+  }else{
+    f_result <- list(like=as.numeric(like),m2logv=m2logv)
+  }
+  return(f_result)
+}
+

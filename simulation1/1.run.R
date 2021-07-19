@@ -5,12 +5,12 @@ here::i_am("README.md")
 ######### Simulation options: model, i, type1, type2, nAMA #########
 ####################################################################
 
-model <- "MRA1" # "MRA2" #LKH (falta) ## funci'on aparte likelihood
+model <- "varycoef" # "MRA2" # varycoef
 i <- 1 # simulation ID # from 1 to 10
 DEP<- "Exponential" # "Matern"  ## types
 type <- DEP  
-nres <- 2 # or 2
-nreps <- 3000 # number of iterations for MCMC
+nres <- 1 # or 2
+nreps <- 1000 # number of iterations for MCMC
 
 ####################################################################
 
@@ -31,6 +31,8 @@ source('functions/packages.R')
  source('functions/covariances.R')
  source('functions/likelihoodK_general.R')
  source('functions/L_functions.R')
+ source('functions/L_functions_varycoef.R')
+ source('functions/functions_varycoef.R')
 # 
  nCov_f <- 2 # fixed betas
  nCov_v <- 1 # spatially varying betas
@@ -66,7 +68,7 @@ source('functions/packages.R')
 Y <- hh$Y
 covariates<- scale(dataset$X1)
 X <- data.matrix(cbind(rep(1,N),covariates))
-XR <- X[,c(1)] #scale(X[,c(1)])
+XR <- data.matrix(X[,c(1)]) #scale(X[,c(1)])
 #XR <- scale(X[,c(2,3)])
 # 
 # ###################

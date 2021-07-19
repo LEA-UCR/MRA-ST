@@ -22,7 +22,7 @@ library(gridExtra)
 
 ```{r}
 
-scenario<-paste0("sim_res/chain",i,model,type,nres,".Rdata")
+scenario<-paste0("sim_res/chain",i,model,taper,type,nres,".Rdata")
 print(scenario)
 load(scenario)
 print(unlist(labels))
