@@ -3,13 +3,13 @@ library(ezknitr)
 
 #resumen de cada simulacion
 
-for(i in 1:10){
+for(i in 3:10){
   model <- "varycoef" # "MRA2"
   type <- "Exponential" # "Matern"
   nres <- 3
   #i <- 1 # simulation ID # from 1 to 10
   burn<- 1  #1200 for nres=2 and 500 for nres=1
-  taper <- 0.1    #0.3
+  taper <- 0.05    #0.3
 output_suffix<-paste0("_",model,taper,type,nres,"sim",i,".Rdata")
 
 ezknitr::ezknit(file = "2.Output.Rmd", out_dir = "output",
