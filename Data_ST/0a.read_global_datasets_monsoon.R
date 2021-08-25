@@ -4,15 +4,16 @@ library(lubridate)
 library(reshape2)
 library(dplyr)
 library(tidyr)
+library(PCICt)
 
 ### cambiar as.period
 
 ## GLOBAL VARIABLES
 
-#VARNAME = "PRECL" # or "OMEGA" or "V" "PRECL"
-VARNAME = "OMEGA" # or "V" "PRECL"
-VARNAME = "U" 
-VARNAME = "V" 
+#VARNAME = "OMEGA"  
+#VARNAME = "U"
+#VARNAME = "V" 
+VARNAME = "TREFHT"
 
 
 blatitude <- c(19.12639, 74.40000)
@@ -22,14 +23,16 @@ listfilesg <- list.files(path = dirbase,
                          pattern=paste0("*.",VARNAME,".*.nc"))   
 #fecha <- '1870-01-01'
 var <- NULL
+#dataset.time <- substr(separate(tibble(listfilesg),1, 
+#                    sep="_", as.character(c(1:3)))$'1',29,35) #OMEGA
 dataset.time <- substr(separate(tibble(listfilesg),1, 
-                    sep="_", as.character(c(1:3)))$'1',24,27) #OMEGA
-dataset.time <- substr(separate(tibble(listfilesg),1, 
-                    sep="_", as.character(c(1:3)))$'1',20,23) #V or U
+                    sep="_", as.character(c(1:3)))$'1',25,35) #V or U
+#dataset.time <- substr(separate(tibble(listfilesg),1, 
+#                    sep="_", as.character(c(1:3)))$'1',27,35) #PSL
 
 #Crear un vector del inicio del tiempo de cada base
 
-for (i in 2:length(listfilesg)) {
+for (i in 1:length(listfilesg)) {
   show(paste0('Construccion datos mensuales-', i))
   vglobal <- ncdf4::nc_open(paste0(dirbase, listfilesg[i]))
   var_pre <- ncdf4::ncvar_get(vglobal, VARNAME)
@@ -41,7 +44,9 @@ for (i in 2:length(listfilesg)) {
 # fechabase <- ymd(fecha)
   
   ####Shu######## inicio
-  timevar <- seq(as.Date(paste0(dataset.time[i],"-01-15")), length.out=length(timevar), by="months")
+  date_base <- as.PCICt(paste0(dataset.time[i],'-01'), cal="365_day")
+  timevar <- date_base+timevar*60*60*24
+  #timevar <- seq(as.Date(paste0(dataset.time[i],"-01-15")), length.out=length(timevar)/2, by="months")
   ####Shu######## fin
   
   dimnames(var_pre)[[1]] <- lonvar
@@ -58,7 +63,8 @@ for (i in 2:length(listfilesg)) {
     mutate(Time = ymd(as.character(Time))) %>% 
     filter(Time >= ymd('1968-01-01')) %>%
     mutate(Year = year(Time), Month = month(Time)) %>%
-    select(Year, Month,lon,lat, VARNAME)
+    select(Year, Month,lon,lat, VARNAME) %>%
+    distinct(Year,Month,lat,lon,.keep_all=T)
   
   #   group_by(Year, Month,Day, lon, lat) %>%
  #   summarise(m = mean(eval(as.name(VARNAME)))) %>% 
@@ -70,27 +76,24 @@ colnames(var) <- c("Year", "Month", "lon", "lat", VARNAME )
 assign(paste0(VARNAME, "_Global"),var,envir = .GlobalEnv)
 rm(var);rm(var_pre);rm(vglobal)
 
-#save(PRECL_Global, file="PRECL_Global-shu.Rdata")
-
-#save(PRECL_Global, file="PRECL_Global-shu.Rdata")
-save(OMEGA_Global, file="OMEGA_Global-Shu.Rdata")
-save(U_Global, file="U_Global-Shu.Rdata")
-save(V_Global, file="V_Global-Shu.Rdata")
+#save(OMEGA_Global, file="OMEGA_Global.Rdata")
+#save(U_Global, file="U_Global.Rdata")
+save(V_Global, file="V_Global.Rdata")
 
 
 
 VARNAME = "TREFHT" # or "PSL" # or 
-VARNAME = "PSL" 
+#VARNAME = "PSL" 
 
 listfilesg <- list.files(path = dirbase, 
                          pattern=paste0("*.",VARNAME,".*.nc"))
 var <- NULL
 dataset.time <- substr(separate(tibble(listfilesg),1, 
-                                sep="_", as.character(c(1:3)))$'1',25,28) #TREFHT
-dataset.time <- substr(separate(tibble(listfilesg),1, 
-                                sep="_", as.character(c(1:3)))$'1',22,25) #PSL
+                                sep="_", as.character(c(1:3)))$'1',30,36) #TREFHT
+#dataset.time <- substr(separate(tibble(listfilesg),1, 
+#                                sep="_", as.character(c(1:3)))$'1',22,25) #PSL
 
-for (i in 2:length(listfilesg)) {
+for (i in 1:length(listfilesg)) {
   show(paste0('Construccion datos mensuales-', i))
   vglobal <- ncdf4::nc_open(paste0(dirbase, listfilesg[i]))
   var_pre <- ncdf4::ncvar_get(vglobal, VARNAME)
@@ -102,7 +105,9 @@ for (i in 2:length(listfilesg)) {
   #fechabase <- ymd(fecha)
 
   ####Shu######## inicio
-  timevar <- seq(as.Date(paste0(dataset.time[i],"-01-15")), length.out=length(timevar), by="months")
+  date_base <- as.PCICt(paste0(dataset.time[i],'-01'), cal="365_day")
+  timevar <- date_base+timevar*60*60*24
+  #timevar <- seq(as.Date(paste0(dataset.time[i],"-01-15")), length.out=length(timevar), by="months")
   ####Shu######## fin
   
   dimnames(var_pre)[[1]] <- lonvar
@@ -118,7 +123,8 @@ for (i in 2:length(listfilesg)) {
     mutate(Time = ymd(as.character(Time))) %>% 
     filter(Time >= ymd('1968-01-01')) %>%
     mutate(Year = year(Time), Month = month(Time)) %>%
-    select(Year, Month,lon,lat, VARNAME)
+    select(Year, Month,lon,lat, VARNAME) %>%
+    distinct(Year,Month,lat,lon,.keep_all=T)
   var <- bind_rows(var, var_pre)
 }
 
@@ -126,6 +132,6 @@ colnames(var) <- c("Year", "Month", "lon", "lat", VARNAME )
 assign(paste0(VARNAME, "_Global"),var,envir = .GlobalEnv)
 rm(var);rm(var_pre);rm(vglobal)
 
-save(PSL_Global, file="PSL_Global-Shu.Rdata")
-save(TREFHT_Global, file="TREFHT_Global-Shu.Rdata")
+#save(PSL_Global, file="PSL_Global-Shu.Rdata")
+save(TREFHT_Global, file="TREFHT_Global.Rdata")
 

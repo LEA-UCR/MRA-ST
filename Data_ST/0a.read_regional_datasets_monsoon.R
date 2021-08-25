@@ -4,6 +4,7 @@ library(lubridate)
 library(reshape2)
 library(dplyr)
 library(tidyr)
+library(PCICt)
 
 #########################################################
 #########################################################
@@ -14,7 +15,7 @@ rm(list=ls())
 
 VARname = "ts" # or 
 #VARname = "pr" 
-VARname = "hus"  #or 
+#VARname = "hus"  #or 
 #VARname = "va" #or 
 #VARname = "ua"
 blatitude <- c(20, 40) 
@@ -31,8 +32,8 @@ dataset.time <- substr(separate(tibble(listfilesr),1,
                                 sep="_", as.character(c(1:4)))$'4',1,4)
 
 #para hus, ua y va
-dataset.time <- substr(separate(tibble(listfilesr),1, 
-                                sep="_", as.character(c(1:5)))$'5',1,4)
+#dataset.time <- substr(separate(tibble(listfilesr),1, 
+#                                sep="_", as.character(c(1:5)))$'5',1,4)
 
 for(i in 4:length(listfilesr)){
   show(paste0('Construccion datos diarios Regional-',i))
@@ -49,17 +50,19 @@ for(i in 4:length(listfilesr)){
   blongitudet <- rbind(blongitudet,blongitude)
   
   ############ Redefinir el tiempo para excluir los 29 de febrero.##### inicio
-  fechabase <- lubridate::ymd(paste0(dataset.time[i],'-01-01'))
-  timevar <- timevar-floor(timevar[1])    #redefinir el tiempo
-  timevar <- fechabase+lubridate::ddays(timevar) ##Transforma la variable de tiempo a formato Año mes día
+  fechabase <- as.PCICt('1968-01-01', cal="365_day")
+  timevar <- fechabase+timevar*60*60*24
+  #fechabase <- lubridate::ymd(paste0(dataset.time[i],'-01-01'))
+  #timevar <- timevar-floor(timevar[1])    #redefinir el tiempo
+  #timevar <- fechabase+lubridate::ddays(timevar) ##Transforma la variable de tiempo a formato Año mes día
   
   #identificar los dias "29 de febrero".
-  find_leap = function(x){
-    day(x) == 29 & month(x) == 2 
-  }
-  timevar1<-timevar[!find_leap(timevar)] ##eliminar los dias "29 de febrero"
-  moredays<-timevar[length(timevar)]+ lubridate::ddays(seq(from=1/8, length=sum(find_leap(timevar)), by=1/8))
-  timevar<-c(timevar1,moredays)
+  #find_leap = function(x){
+  #  day(x) == 29 & month(x) == 2 
+  #}
+  #timevar1<-timevar[!find_leap(timevar)] ##eliminar los dias "29 de febrero"
+  #moredays<-timevar[length(timevar)]+ lubridate::ddays(seq(from=1/8, length=sum(find_leap(timevar)), by=1/8))
+  #timevar<-c(timevar1,moredays)
   ############ Redefinir el tiempo para excluir los 29 de febrero.##### fin
 
   dimnames(varreg_pre)[[1]] <- xcvar
@@ -117,8 +120,8 @@ summary(varreg)
 
 #save(ua_Regional, file="ua_RegionalMensualMonson.Rdata")
 #save(va_Regional, file="va_RegionalMensualMonson.Rdata")
-save(hus_Regional, file="hus_RegionalMensualMonson.Rdata")
-
+#save(hus_Regional, file="hus_RegionalMensualMonson.Rdata")
+save(ts_Regional, file="ts_RegionalMensualMonson.Rdata")
 #########################################################
 #########################################################
 #########################################################
