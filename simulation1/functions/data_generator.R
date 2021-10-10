@@ -22,7 +22,7 @@ function.to.gen.data <- function(nDEP,nres,i){
   #Spatial structure parameters
   type <- DEP[nDEP]
   phi <- 3
-  nu1 <- 2  # roughness parameter for error
+  nu1 <- 3/2  # roughness parameter for error
   sigma2 <- sigma2
   tau2 <- 1
   
@@ -51,7 +51,7 @@ function.to.gen.data <- function(nDEP,nres,i){
   ### ############################ ###
   ###   Random Field Generator     ###
   ### ############################ ###
-  rExpMat_regional <- function(n,coords,type,phi,nu=2){
+  rExpMat_regional <- function(n,coords,type,phi,nu=3/2){
     if(type=='Exponential'){
       m <- stationary.cov(coords,Covariance = type,
                           Distance = 'rdist.earth',
@@ -68,7 +68,7 @@ function.to.gen.data <- function(nDEP,nres,i){
   ### ############################ ###
   ### Spatial parameter generation ###
   ### ############################ ###
-  beta0.cov <- rExpMat_regional(n,gridbase_regional,type = type,phi=phi)
+  beta0.cov <- rExpMat_regional(n,gridbase_regional,type = type,phi=phi,nu=nu1)
   #Nugget effect generation
   epsilon_g <- rnorm(ng*k, 0, sqrt(sigma2)) ### nugget global
   epsilon_gr <- epsilon_g[index]# translate epsilon_g to regional resolution
