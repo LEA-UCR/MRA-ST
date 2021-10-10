@@ -3,19 +3,19 @@ library(ezknitr)
 
 #resumen de cada simulacion
 
-for(i in 1:10){
-  model <- "varycoef" # "MRA2"
-  type <- "Exponential" # "Matern"
-  nres <- 3
+for(i in 7:10){
+  model <- "MRA1" # "MRA2"
+  type <- "Matern" # "Matern"
+  nres <- 2
   #i <- 1 # simulation ID # from 1 to 10
   burn<- 1  #1200 for nres=2 and 500 for nres=1
-  taper <- 0.1    #0.3
-output_suffix<-paste0("_",model,taper,type,nres,"sim",i,".Rdata")
+  #taper <- 0.1    #0.3
+output_suffix<-paste0("_",model,type,nres,"sim",i,".Rdata")
 
 ezknitr::ezknit(file = "2.Output.Rmd", out_dir = "output",
        fig_dir = "myfigs",out_suffix=output_suffix,
        params=list(model=model,type=type,nres=nres,i=i,
-                   burn=burn,taper=taper),
+                   burn=burn),
        keep_md = FALSE,
        keep_html = TRUE)
 }

@@ -5,12 +5,12 @@ here::i_am("README.md")
 ######### Simulation options: model, i, type1, type2, nAMA #########
 ####################################################################
 
-model <- "varycoef" # "MRA2" # varycoef
+model <- "MRA1" # "MRA2" # varycoef
 i <- 1 # simulation ID # from 1 to 10
 DEP<- "Exponential" # "Matern"  ## types
 type <- DEP  
-nres <- 1 # or 2
-nreps <- 1000 # number of iterations for MCMC
+nres <- 3 # or 2
+nreps <- 3000 # number of iterations for MCMC
 
 ####################################################################
 
