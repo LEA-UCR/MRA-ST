@@ -1,0 +1,182 @@
+---
+title: "Reporte"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+params: 
+  output_dir: "../reports"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sp)
+library(sf)
+library(gridExtra)
+```
+
+## Detalles de la simulación
+
+```{r}
+
+scenario<-paste0("sim_res/chain",i,model,taper,type,nres,".Rdata")
+print(scenario)
+load(scenario)
+print(unlist(labels))
+print(total_time)
+print(burn)
+
+```
+
+## Plots
+
+### Betas
+
+```{r plot1}
+betas <- chain$chain_result$chain_beta[-(1:burn),]
+#colnames(betas) <- paste0('Beta',0:(dim(betas)[2]-1))
+betas <- data.frame(betas) %>% mutate(Index=1:n())
+betas_plot <- betas %>% pivot_longer(-Index,names_to = 'Variable',values_to='Betas')
+grafico_betas <- ggplot(data = betas_plot,mapping = aes(x = Index,y = Betas))+
+  geom_line()+facet_wrap(vars(Variable),nrow = dim(betas)[2],scales = 'free')+
+  theme_bw()
+grafico_betas
+colMeans(betas)
+```
+### Phis
+
+```{r plot2}
+Phis <- chain$chain_result$chain_Phi[-(1:burn),]
+#colnames(Phis) <- paste0('Phi',0:(dim(Phis)[2]-1))
+Phis <- data.frame(Phis) %>% mutate(Index=1:n())
+Phis_plot <- Phis %>% pivot_longer(-Index,names_to = 'Variable',values_to='Phi')
+grafico_Phis <- ggplot(data = Phis_plot,mapping = aes(x = Index,y = Phi))+
+  geom_line()+facet_wrap(vars(Variable),nrow = dim(Phis)[2],scales = 'free')+
+  theme_bw()
+grafico_Phis
+colMeans(Phis)
+```
+### tau
+
+
+```{r plot4}
+taus <- chain$chain_result$chain_tau[-(1:burn)]
+taus <- data.frame(Tau=taus) %>% mutate(Index=1:n())
+grafico_tau <- ggplot(data = taus,mapping = aes(x = Index,y = Tau))+
+  geom_line()+
+  theme_bw()
+grafico_tau
+colMeans(taus)
+```
+
+### Y
+
+Porcentaje de Y observado que cae dentro del intervalo de predicción con 95%.
+
+```{r plot6}
+load(paste0("sim_data/dataset",i,type,nres,".Rdata"))
+Yobs<-hh$Y
+Ysample <- chain$Ysample[,-(1:burn)]
+alpha<-0.05
+quantileY<-t(apply(Ysample,MARGIN=1,quantile,probs=c(alpha/2,1-alpha/2)))
+
+Y.in.interval<-map_dbl(1:length(Yobs),
+    ~{between(Ysample[.],quantileY[.,1],quantileY[.,2])})
+mean(Y.in.interval)
+
+```
+
+```{r plot7}
+Ysample_m<-rowMeans(Ysample)
+Ysample_m <- rowMeans(Ysample)
+nn<-length(Ysample_m)
+Ysample_s <- purrr::map_dbl(1:nn,~sd(Ysample[.,]))
+Ysample_med <- purrr::map_dbl(1:nn,~median(Ysample[.,]))
+hh$Yhat <- Ysample_m
+hh$Ysd <- Ysample_s
+hh$Ymed <- Ysample_med
+hh_sf <- st_as_sf(hh)
+
+grafico1 <- ggplot(data = hh_sf)+geom_sf(aes(col = Y))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico2 <- ggplot(data = hh_sf)+geom_sf(aes(col = Yhat))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico3 <- ggplot(data = hh_sf)+geom_sf(aes(col = Ymed))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico4 <- ggplot(data = hh_sf)+geom_sf(aes(col = Ysd))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Yposterior <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+
+## Same scale plots
+
+```{r}
+Y.min<-min(hh_sf$Y,hh_sf$Yhat,hh_sf$Ymed)
+Y.max<-max(hh_sf$Y,hh_sf$Yhat,hh_sf$Ymed)
+grafico1 <- ggplot(data = hh_sf)+geom_sf(aes(col = Y))+
+  theme_bw()+
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(Y.min,Y.max))
+
+grafico2 <- ggplot(data = hh_sf)+geom_sf(aes(col = Yhat))+
+  theme_bw()+
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(Y.min,Y.max))
+
+grafico3 <- ggplot(data = hh_sf)+geom_sf(aes(col = Ymed))+
+  theme_bw()+  
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(Y.min,Y.max))
+
+grafico4 <- ggplot(data = hh_sf)+geom_sf(aes(col = Ysd))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Yposterior_same.scale <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+
+
+
+```{r}
+MSE <- sqrt(sum(purrr::map_dbl(1:length(hh_sf$Y),~(mean(Ysample[.,])-hh_sf$Y[.])^2)))
+MSE_N <- MSE / mean(Ysample)
+quantiles_d <- purrr::map_dfr(.x = 1:length(hh_sf$Y),.f = function(x) as.data.frame(t(quantile(Ysample[x,],probs=c(0.025,0.975)))))
+colnames(quantiles_d) <- c('Lower','Upper')
+
+IS=function(alpha,upper,lower,y){
+  N=length(y)
+  ISi=rep(0,N)
+  for(i in 1:N){
+    #show(i)
+    if(y[i]<=lower[i]){
+      ISi[i]=-2*alpha*(upper[i]-lower[i])-4*(lower[i]-y[i])
+    }else{
+      if(lower[i]<y[i] && y[i]<upper[i]){
+        ISi[i]=-2*alpha*(upper[i]-lower[i])
+      }else{
+        ISi[i]=-2*alpha*(upper[i]-lower[i])-4*(y[i]-upper[i])
+      }
+    }
+  }
+  ISres=mean(ISi)
+  ISres
+}
+
+IS_Y <- -IS(alpha = 0.05,upper = quantiles_d$Upper,lower = quantiles_d$Lower,y = hh_sf$Y)
+
+MSE_N
+IS_Y
+```
+
+
