@@ -103,6 +103,9 @@ m.ex2= inla(Y ~ 0 + intercept +  PC1 + PC2 + PC3 +
             control.compute = list(dic=TRUE,cpo=TRUE), 
             verbose=TRUE)
 
+
+save(m.ex2,spde.spatial.vcm, stk, hh_extract,file = 'results_INLA_draft.RData')
+
 #Efectos fijos
 m.ex2$summary.fixed
 
@@ -139,3 +142,11 @@ inla.emarginal(function(x) x,
 
 inla.emarginal(function(x) x,
                outputPC3.field$marginals.range.nominal[[1]])
+
+# Predicciones
+index.pred <- inla.stack.index(stack = stk, tag = "est")$data
+Resumen_fitted <- m.ex2$summary.fitted.values[index.pred,]
+
+inla.qmarginal(c(0.025,0.975),m.ex2$marginals.fitted.values[[1]])
+
+
