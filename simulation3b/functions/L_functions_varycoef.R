@@ -38,12 +38,12 @@ f_P_tau_varycoef <- function(beta,A2,Phi,Sigma,tau,m2loglike_old,
   #  logprior <- logpriorphi+logpriornu+logpriortau
   #}
   logproposal <- log(dtruncnorm(Phi[1],a = 0,
-                                b = 1,mean = Phi_m[1],sd = sd_Phi[1]))
+                                b = 3,mean = Phi_m[1],sd = sd_Phi[1]))
   #  logproposal <- logproposal + log(dtruncnorm(Phi[2],
   #                                              a = 500,b = 3500,mean = Phi_m[2],sd = sd_Phi[2]))
   #logproposal <- logproposal + dgamma(tau,shape = tau_m/sd_tau,scale = sd_tau)
   logproposal <- logproposal + log(dtruncnorm(tau,
-                                              a = 0,b = 1,mean = tau_m,sd = sd_tau))
+                                              a = 0,b = 3,mean = tau_m,sd = sd_tau))
   like <- -(m2logv/2) +logprior + logproposal
   
   if(status=='new'){

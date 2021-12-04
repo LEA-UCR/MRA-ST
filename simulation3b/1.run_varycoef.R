@@ -2,7 +2,7 @@
 here::i_am("README.md")
 
 
-for(i in 1:1){
+for(i in 1:10){
 ####################################################################
 ######### Simulation options: model, i, type1, type2, nAMA #########
 ####################################################################
@@ -12,7 +12,7 @@ model <- "varycoef" # "MRA2" # varycoef
 DEP<- "Exponential"    #"Exponential" # "Matern"  ## types
 type <- DEP  
 nres <- 1 # or 2
-nreps <- 500 # number of iterations for MCMC
+nreps <- 1500 # number of iterations for MCMC
 taper <- 0.1
 ####################################################################
 
@@ -60,7 +60,7 @@ locs <- st_coordinates(hh$geometry)
 beta <- c(1,1)
 start_beta <- beta
 # start_A2 <- A2
-Sigma <-1
+Sigma <-0.2
 # start_PHI <- seq(0.5,5,length.out=10)
 # start_Phi <- start_PHI[i]
 start_Phi <- 0.15
@@ -170,7 +170,7 @@ run_metropolis_MCMC <- function(start_beta,#start_A2,
   
   sd_Phi <- c(0.1)
   #a_n_1 <- 100
-  sd_tau <- 0.1
+  sd_tau <- 1
   Ysample <- matrix(0,nrow = dim(SigmaYinv_old)[1],ncol = iterations)
   
   for (i in 1:iterations){
@@ -215,10 +215,10 @@ run_metropolis_MCMC <- function(start_beta,#start_A2,
     alpha_star <- 0.234
     sd_Phi[1] <- sqrt(sd_Phi[1]^2*(1+eta_n*(alpha_Phi-alpha_star)))
     #sd_Phi[2] <- sqrt(sd_Phi[2]^2*(1+eta_n*(alpha_Phi-alpha_star)))
-    sd_Phi[1] <- min(sd_Phi[1],0.001)
+    sd_Phi[1] <- min(sd_Phi[1],0.1)
     #sd_Phi[2] <- min(sd_Phi[2],5)
     sd_tau <- sqrt(sd_tau^2*(1+eta_n*(alpha_Phi-alpha_star)))
-    sd_tau <- min(0.05,sd_tau)
+    sd_tau <- min(0.1,sd_tau)
     
     ## MCMC A###
     # fold_A2 <- f_A2(chain_beta[i+1,],chain_A2[[i]],chain_Phi[i+1,],
