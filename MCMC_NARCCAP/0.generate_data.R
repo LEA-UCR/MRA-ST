@@ -24,8 +24,10 @@ rm(base_cruda)
 
 
 if(variable_narccap=='Temp'){
+  #datos_filt <- base_recortada %>% mutate(Y=log(ts)-log(TREFHT)) %>% 
+  #  dplyr::select(Year,Month,Y,PC1,PC2,PC3)
   datos_filt <- base_recortada %>% mutate(Y=log(ts)-log(TREFHT)) %>% 
-    dplyr::select(Year,Month,Y,PC1,PC2,PC3) 
+      dplyr::select(Year,Month,Y,OMEGA,U,V,ts,TREFHT)
   coordenadas <- base_recortada %>% dplyr::select(lon,lat)
 }else{
   datos_filt <- base_recortada %>% rename(Y=pr) %>% 

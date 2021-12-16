@@ -70,19 +70,19 @@ spde.spatial.vcm = inla.spde2.pcmatern(mesh=mesh,
                                        prior.range=rho.vcm,
                                        prior.sigma=sigma.vcm)  
 A.PC1 = inla.spde.make.A(mesh, loc=locations, 
-                          weights = hh_extract$PC1)
+                          weights = hh_extract$OMEGA)
 idx.PC1 = inla.spde.make.index("idx.PC1", spde.spatial.vcm$n.spde)
 A.PC2 = inla.spde.make.A(mesh, loc=locations, 
-                         weights = hh_extract$PC2)
+                         weights = hh_extract$U)
 idx.PC2 = inla.spde.make.index("idx.PC2", spde.spatial.vcm$n.spde)
 A.PC3 = inla.spde.make.A(mesh, loc=locations, 
-                         weights = hh_extract$PC3)
+                         weights = hh_extract$V)
 idx.PC3 = inla.spde.make.index("idx.PC3", spde.spatial.vcm$n.spde)
 
 df.covar.expanded = data.frame(intercept=1,
-                               PC1 = hh_extract$PC1,
-                               PC2 = hh_extract$PC2,
-                               PC3 = hh_extract$PC3)
+                               OMEGA = hh_extract$OMEGA,
+                               U = hh_extract$U,
+                               V = hh_extract$V)
 
 
 ## INLA 
@@ -94,7 +94,7 @@ stk <- inla.stack(data=list(Y=hh_extract$Y), tag='est',
                                idx.PC3=idx.PC3, 
                                df.covar.expanded))
 
-m.ex2= inla(Y ~ 0 + intercept +  PC1 + PC2 + PC3 +
+m.ex2= inla(Y ~ 0 + intercept +  OMEGA + U + V +
               f(idx.PC1, model = spde.spatial.vcm)+ 
               f(idx.PC2, model = spde.spatial.vcm)+
               f(idx.PC3, model = spde.spatial.vcm),
