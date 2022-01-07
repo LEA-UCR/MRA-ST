@@ -4,6 +4,7 @@ library(lubridate)
 library(reshape2)
 library(dplyr)
 library(tidyr)
+library(PCICt)
 
 ### cambiar as.period
 
@@ -111,12 +112,10 @@ for (VARNAME in VARNAMES) {
 }
 
 
-
 # save(OMEGA_Global, file="OMEGA_Global-Shu.Rdata")
 # save(U_Global, file="U_Global-Shu.Rdata")
 # save(V_Global, file="V_Global-Shu.Rdata")
 # save(TREFHT_Global, file="TREFHT_Global-Shu.Rdata")
-
 
 
 

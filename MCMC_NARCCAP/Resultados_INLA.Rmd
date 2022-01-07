@@ -1,0 +1,133 @@
+---
+title: "Resultados y Diagnósticos-INLA"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(sp)
+library(sf)
+library(gridExtra)
+library(INLA)
+library(latex2exp)
+```
+
+Carga de resultados:
+```{r}
+load('results_INLA_ST3_draft.RData')
+```
+
+Densidades posteriores de Betas fijos
+```{r}
+base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type='beta0'),
+                                data.frame(m.ex2$marginals.fixed$OMEGA,type='beta1'),
+                                data.frame(m.ex2$marginals.fixed$U,type='beta2'),
+                                data.frame(m.ex2$marginals.fixed$V,type='beta3'))
+
+ggplot(data = base_grafico_betas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+```
+
+Densidades posteriores de parámetros de rango:
+```{r}
+outputPC1.field <- inla.spde2.result(inla=m.ex2,
+                                   name="idx.PC1", spde=spde.spatial.vcm, do.transf=TRUE)
+outputPC2.field <- inla.spde2.result(inla=m.ex2,
+                                   name="idx.PC2", spde=spde.spatial.vcm, do.transf=TRUE)
+outputPC3.field <- inla.spde2.result(inla=m.ex2,
+                                   name="idx.PC3", spde=spde.spatial.vcm, do.transf=TRUE)
+
+base_grafico_rangos <- bind_rows(data.frame(outputPC1.field$marginals.range.nominal$range.nominal.1,type='PC1'),
+data.frame(outputPC2.field$marginals.range.nominal$range.nominal.1,type='PC2'),
+data.frame(outputPC3.field$marginals.range.nominal$range.nominal.1,type='PC3'))
+
+ggplot(data = base_grafico_rangos,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+```
+
+Densidades posteriores de parámetros de varianza por efecto aleatorio:
+```{r}
+base_grafico_varianzas <- bind_rows(data.frame(outputPC1.field$marginals.variance.nominal$variance.nominal.1,type='PC1'),
+data.frame(outputPC2.field$marginals.variance.nominal$variance.nominal.1,type='PC2'),
+data.frame(outputPC3.field$marginals.variance.nominal$variance.nominal.1,type='PC3'))
+
+ggplot(data = base_grafico_varianzas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+```
+
+Densidad posterior del efecto nugget:
+```{r}
+base_grafico_nugget <- data.frame(inla.tmarginal(function(x) 1/x, m.ex2$marginals.hyper$`Precision for the Gaussian observations`))
+
+ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()
+```
+Gráficos de observaciones vs predicciones:
+```{r}
+index.pred <- inla.stack.index(stack = stk, tag = "est")$data
+Resumen_fitted <- m.ex2$summary.fitted.values[index.pred,]
+
+inla.qmarginal(c(0.025,0.975),m.ex2$marginals.fitted.values[[1]])
+
+hh_extract$Yhat <- Resumen_fitted$mean
+hh_extract$Ysd <- Resumen_fitted$sd
+hh_extract$Ymed <- Resumen_fitted$`0.5quant`
+hh_extract$That <- exp(log(hh_extract$TREFHT)+hh_extract$Yhat)
+hh_extract$Tmed <- exp(log(hh_extract$TREFHT)+hh_extract$Ymed)
+hh_extract$TShat <- exp(Resumen_fitted$sd)
+
+
+hh_sf <- st_as_sf(hh_extract)
+grafico1 <- ggplot(data = hh_sf)+geom_sf(aes(col = ts))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico2 <- ggplot(data = hh_sf)+geom_sf(aes(col = That))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico3 <- ggplot(data = hh_sf)+geom_sf(aes(col = Tmed))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+
+grafico4 <- ggplot(data = hh_sf)+geom_sf(aes(col = TShat))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Yposterior <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+Diagnósticos:
+
+```{r}
+MSE <- sqrt(mean(hh_sf$ts-hh_sf$That)^2)
+MSE_N <- MSE / mean(hh_sf$ts)
+quantiles_d <- data.frame(Lower=exp(log(hh_extract$TREFHT)+Resumen_fitted$`0.025quant`),
+                          Upper=exp(log(hh_extract$TREFHT)+Resumen_fitted$`0.975quant`))
+
+IS=function(alpha,upper,lower,y){
+  N=length(y)
+  ISi=rep(0,N)
+  for(i in 1:N){
+    #show(i)
+    if(y[i]<=lower[i]){
+      ISi[i]=-2*alpha*(upper[i]-lower[i])-4*(lower[i]-y[i])
+    }else{
+      if(lower[i]<y[i] && y[i]<upper[i]){
+        ISi[i]=-2*alpha*(upper[i]-lower[i])
+      }else{
+        ISi[i]=-2*alpha*(upper[i]-lower[i])-4*(y[i]-upper[i])
+      }
+    }
+  }
+  ISres=mean(ISi)
+  ISres
+}
+
+IS_Y <- -IS(alpha = 0.05,upper = quantiles_d$Upper,lower = quantiles_d$Lower,y = hh_sf$ts)
+IS_Y
+MSE_N
+```
+

@@ -33,8 +33,8 @@ library(CholWishart)
 library(tmvtnorm)
 library(tictoc)
 
-nCov_f <- 3
-nCov_v <- 2
+nCov_f <- 4
+nCov_v <- 3
 
 nlevels_P <- 2
 nlevels_A <- 2
@@ -85,7 +85,7 @@ Y <- hh$Y
 #XR <- scale(X[,c(2,3,4,5,6)])
 if(variable_narccap == 'Temp'){
   X <- data.matrix(st_drop_geometry(hh %>% mutate(interc = 1) %>% 
-                                      dplyr::select(interc,TREFHT,PSL)))
+                                      dplyr::select(interc,PC1,PC2,PC3)))
 }else{
   X <- data.matrix(st_drop_geometry(hh %>% mutate(interc = 1) %>% 
                                       dplyr::select(interc,PRECL,PSL)))
@@ -93,7 +93,7 @@ if(variable_narccap == 'Temp'){
 
 if(model=="SVC"){
   #XR <- scale(X[,c(2,3)])
-  XR <- X[,c(2,3)]
+  XR <- X[,c(2,3,4)]
 }else{
   XR <- X[,c(1)]
 }

@@ -1,5 +1,5 @@
-setwd("~/MRA_ST/MRA2_mensual")
-#setwd("/home/Emuladores/datos")
+#setwd("~/MRA_ST/MRA2_mensual")
+#setwd("/home/Emuladores/datos/")
 #getwd()
 
 library(tidyverse)
@@ -18,37 +18,41 @@ blongitude <- c(240, 265)
 
 load('ts_RegionalMensualMonson.Rdata')
 ts_Regional <- ts_Regional %>% filter(Year %in% period)
-load('/home/Emuladores/datos/TREFHT_Global-Shu.Rdata') 
+#load('/home/Emuladores/datos/TREFHT_Global-Shu.Rdata') 
+load('TREFHT_Global.Rdata') 
 TREFHT_Global <- TREFHT_Global %>% filter(Year %in% period)
 TREFHT_Global <- TREFHT_Global %>% filter(lat >= blatitude[1],
                                           lat <= blatitude[2],
                                           lon >= blongitude[1],
                                           lon <= blongitude[2])
-load('/home/Emuladores/datos/OMEGA_Global-Shu.Rdata')
+#load('/home/Emuladores/datos/OMEGA_Global-Shu.Rdata')
+load('OMEGA_Global.Rdata')
 OMEGA_Global <- OMEGA_Global %>% filter(Year %in% period)
 OMEGA_Global <- OMEGA_Global %>% filter(lat >= blatitude[1],
                                           lat <= blatitude[2],
                                           lon >= blongitude[1],
                                           lon <= blongitude[2])
-load('/home/Emuladores/datos/PSL_Global-Shu.Rdata')
-PSL_Global <- PSL_Global %>% filter(Year %in% period)
-PSL_Global <- PSL_Global %>% filter(lat >= blatitude[1],
-                                          lat <= blatitude[2],
-                                          lon >= blongitude[1],
-                                          lon <= blongitude[2])
-load('/home/Emuladores/datos/U_Global-Shu.Rdata')
+#load('/home/Emuladores/datos/PSL_Global-Shu.Rdata')
+# PSL_Global <- PSL_Global %>% filter(Year %in% period)
+# PSL_Global <- PSL_Global %>% filter(lat >= blatitude[1],
+#                                           lat <= blatitude[2],
+#                                           lon >= blongitude[1],
+#                                           lon <= blongitude[2])
+#load('/home/Emuladores/datos/U_Global-Shu.Rdata')
+load('U_Global.Rdata')
 U_Global <- U_Global %>% filter(Year %in% period)
 U_Global <- U_Global %>% filter(lat >= blatitude[1],
                                           lat <= blatitude[2],
                                           lon >= blongitude[1],
                                           lon <= blongitude[2])
-load('/home/Emuladores/datos/V_Global-Shu.Rdata')
+#load('/home/Emuladores/datos/V_Global-Shu.Rdata')
+load('V_Global.Rdata')
 V_Global <- V_Global %>% filter(Year %in% period)
 V_Global <- V_Global %>% filter(lat >= blatitude[1],
                                           lat <= blatitude[2],
                                           lon >= blongitude[1],
                                           lon <= blongitude[2])
-load('/home/Emuladores/datos/resolucion/altitude.Rdata')
+#load('/home/Emuladores/datos/resolucion/altitude.Rdata')
 
 
 pointsglobal_pre <- TREFHT_Global %>% dplyr::select(lon,lat) %>% distinct(lon,lat)
@@ -81,7 +85,7 @@ colnames(pointsglobal_tb)[1:2] <- c('lon','lat')
 
 TREFHT_Global <- TREFHT_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 OMEGA_Global <- OMEGA_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
-PSL_Global <- PSL_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
+#PSL_Global <- PSL_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 U_Global <- U_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 V_Global <- V_Global %>%  left_join(pointsglobal_tb,by = c("lon", "lat"))
 #altitude_Global <- pointsglobal_tb %>%  left_join(altitude,by = c("lon", "lat"))
@@ -91,47 +95,58 @@ ts_Regional <- ts_Regional %>% left_join(pointsregional_tb,by = c("lon", "lat"))
 
 TS_tot <- ts_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
   left_join(OMEGA_Global,by = c("Year", "Month", "indicegrid")) %>%
-  left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
+#  left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
   dplyr::select(Year,Month,ts,lat=lat.x,lon=lon.x,indicegrid,
-         TREFHT,OMEGA,PSL,U,V)
+         TREFHT,OMEGA,U,V)
 
-save(TS_tot,file = 'TStotalmensual.RData')
+
+## PCA 
+
+PCA_data <- TS_tot %>% select(OMEGA,U,V) 
+pca = prcomp(PCA_data, scale. = TRUE)
+PCs <- pca$x
+PCs <- data.frame(PCs)
+colnames(PCs) <- paste0('PC',1:dim(PCs)[2])
+
+TS_tot <- TS_tot %>% bind_cols(PCs)
+
+save(TS_tot,file = '../MCMC_NARCCAP/data_narccap/TStotalmensual.RData')
 
 #Precipitation dataset 
 
-period <- 1981:1999
-
-load('pr_RegionalMensualMonson.Rdata')
-pr_Regional <- pr_Regional %>% filter(Year %in% period)
-
-pointsregional_pre <- pr_Regional %>% select(lon,lat) %>% distinct(lon,lat)
-pointsregional_sp <- SpatialPoints(pointsregional_pre)
-pointsregional <- st_as_sf(pointsregional_sp)
-st_crs(pointsregional) <- 4326
-
-indicesgrid <- st_intersects(pointsregional,gridglobalsf)
-nulos <- unlist(map(1:2484,~is_empty(indicesgrid[[.]])))
-plot(pointsregional[!nulos,])
-indicesgrid <- unlist(indicesgrid)
-
-pointsregional <- pointsregional[!nulos,]
-
-pointsregional_tb <- pointsregional %>% st_coordinates() %>%
-  as.data.frame() %>% mutate(indicegrid = indicesgrid) 
-
-colnames(pointsregional_tb)[1:2] <- c('lon','lat') 
-
-pr_Regional <- pr_Regional %>% left_join(pointsregional_tb,by = c("lon", "lat")) %>%
-  na.omit()
-
-pr_tot <- pr_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
-  left_join(OMEGA_Global,by = c("Year", "Month", "indicegrid")) %>%
-  left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
-  left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
-  left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
-  select(Year,Month,pr=pr,lat=lat.x,lon=lon.x,indicegrid,
-         TREFHT,OMEGA,PSL,U,V)
-
-save(pr_tot,file = 'PRtotalmensual.RData')
+# period <- 1981:1999
+# 
+# load('pr_RegionalMensualMonson.Rdata')
+# pr_Regional <- pr_Regional %>% filter(Year %in% period)
+# 
+# pointsregional_pre <- pr_Regional %>% select(lon,lat) %>% distinct(lon,lat)
+# pointsregional_sp <- SpatialPoints(pointsregional_pre)
+# pointsregional <- st_as_sf(pointsregional_sp)
+# st_crs(pointsregional) <- 4326
+# 
+# indicesgrid <- st_intersects(pointsregional,gridglobalsf)
+# nulos <- unlist(map(1:2484,~is_empty(indicesgrid[[.]])))
+# plot(pointsregional[!nulos,])
+# indicesgrid <- unlist(indicesgrid)
+# 
+# pointsregional <- pointsregional[!nulos,]
+# 
+# pointsregional_tb <- pointsregional %>% st_coordinates() %>%
+#   as.data.frame() %>% mutate(indicegrid = indicesgrid) 
+# 
+# colnames(pointsregional_tb)[1:2] <- c('lon','lat') 
+# 
+# pr_Regional <- pr_Regional %>% left_join(pointsregional_tb,by = c("lon", "lat")) %>%
+#   na.omit()
+# 
+# pr_tot <- pr_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
+#   left_join(OMEGA_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   select(Year,Month,pr=pr,lat=lat.x,lon=lon.x,indicegrid,
+#          TREFHT,OMEGA,PSL,U,V)
+# 
+# save(pr_tot,file = 'PRtotalmensual.RData')
