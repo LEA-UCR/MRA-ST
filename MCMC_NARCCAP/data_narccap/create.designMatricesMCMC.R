@@ -64,7 +64,7 @@ TS_tot <- ts_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indic
   left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
-  select(Year,Month,ts,lat=lat.x,lon=lon.x,indicegrid,
+  dplyr::select(Year,Month,ts,lat=lat.x,lon=lon.x,indicegrid,
          TREFHT,OMEGA,PSL,U,V)
 
 save(TS_tot,file ='TStotal2.RData')

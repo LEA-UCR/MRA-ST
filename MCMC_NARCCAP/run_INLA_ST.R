@@ -49,7 +49,10 @@ Qlist <- aa_A[[3]]
 nn <- aa_A[[4]]
 hh <- Qlist[[nn+2]]
 
-hh_extract <- hh %>% filter(Year>=1997)
+hh_extract <- hh %>% filter(Year>=1997 & Year < 1999)
+hh_pred <- hh %>% filter(Year == 1999)
+#hh_extract <- hh_extract %>% mutate(Y=ifelse(Year==1999,NA,Y))
+#hh_extract <- hh
 locations <- st_coordinates(hh_extract$geometry)
 colnames(locations) <- c('lon','lat')
 
@@ -58,10 +61,10 @@ expected.range = 1500
 max.edge = expected.range/5  
 
 mesh =
-  inla.mesh.2d(loc=locations,
+  inla.mesh.2d(loc=unique(locations),
                max.edge=c(.6, 5) * max.edge)
-plot(mesh, asp=1)
-points(locations, col='red')
+#plot(mesh, asp=1)
+#points(locations, col='red')
 
 rho.vcm <- c(700,0.5)
 sigma.vcm <- c(0.1/0.31,0.01) 
@@ -82,43 +85,89 @@ timesn <- dim(fechas)[1]
 
 hh_extract <- hh_extract %>% left_join(fechas,by = c('Year','Month'))
 
-idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
+
+idx.PC0 = inla.spde.make.index("idx.PC0", n.spde = spde.spatial.vcm$n.spde,
                                n.group = timesn)
-A.PC1 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
-                         weights = hh_extract$OMEGA)
-idx.PC2 = inla.spde.make.index("idx.PC2", n.spde = spde.spatial.vcm$n.spde,
-                               n.group = timesn)
-A.PC2 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
-                         weights = hh_extract$U)
-idx.PC3 = inla.spde.make.index("idx.PC3", n.spde = spde.spatial.vcm$n.spde,
-                               n.group = timesn)
-A.PC3 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
-                         weights = hh_extract$V)
+A.PC0 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind)
+
+# idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
+#                                n.group = timesn)
+# A.PC1 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
+#                          weights = hh_extract$OMEGA)
+# idx.PC2 = inla.spde.make.index("idx.PC2", n.spde = spde.spatial.vcm$n.spde,
+#                                n.group = timesn)
+# A.PC2 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
+#                          weights = hh_extract$U)
+# idx.PC3 = inla.spde.make.index("idx.PC3", n.spde = spde.spatial.vcm$n.spde,
+#                                n.group = timesn)
+# A.PC3 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
+#                          weights = hh_extract$V)
 
 df.covar.expanded = data.frame(intercept=1,
                                OMEGA = hh_extract$OMEGA,
                                U = hh_extract$U,
-                               V = hh_extract$V)
+                               V = hh_extract$V,
+                               Month = factor(hh_extract$Month))
 
 
 ## INLA 
 
 stk <- inla.stack(data=list(Y=hh_extract$Y), tag='est',
-                  A=list(A.PC1, A.PC2, A.PC3,1),
-                  effects=list(idx.PC1=idx.PC1,
-                               idx.PC2=idx.PC2,
-                               idx.PC3=idx.PC3, 
+                  A=list(A.PC0,1),
+                  effects=list(idx.PC0=idx.PC0, 
                                df.covar.expanded))
+
+
+# stk <- inla.stack(data=list(Y=hh_extract$Y), tag='est',
+#                   A=list(A.PC1, A.PC2, A.PC3,1),
+#                   effects=list(idx.PC1=idx.PC1,
+#                                idx.PC2=idx.PC2,
+#                                idx.PC3=idx.PC3, 
+#                                df.covar.expanded))
+
+rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
+
+#https://avianecologist.com/tag/inla/
+
+formula <- Y ~ 0 + intercept +
+  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
+    control.group = list(model = "ar1", hyper = rprior))
+
+
+# formula <- Y ~ 0 + intercept +  OMEGA + U + V +
+#   f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
+#     control.group = list(model = "ar1", hyper = rprior))+ 
+#   f(idx.PC2, model = spde.spatial.vcm,group = idx.PC2.group,
+#     control.group = list(model = "ar1", hyper = rprior))+
+#   f(idx.PC3, model = spde.spatial.vcm,group = idx.PC3.group,
+#     control.group = list(model = "ar1", hyper = rprior))
+
 tic()
-m.ex2= inla(Y ~ 0 + intercept +  OMEGA + U + V +
-              f(idx.PC1, model = spde.spatial.vcm)+ 
-              f(idx.PC2, model = spde.spatial.vcm)+
-              f(idx.PC3, model = spde.spatial.vcm),
+m.ex2= inla(formula,
             data = inla.stack.data(stk),
             control.predictor = list(A = inla.stack.A(stk),compute = TRUE),
-            control.compute = list(dic=TRUE,cpo=TRUE), 
+            control.compute = list(dic=TRUE,cpo=TRUE),
+            control.inla = list(diagonal = 100, strategy = "gaussian",
+                                int.strategy = "eb"),
             verbose=TRUE)
+
+
+# m.ex2= inla(formula,
+#            data = inla.stack.data(stk),
+#            control.predictor = list(A = inla.stack.A(stk),compute = TRUE),
+#            control.compute = list(dic=TRUE,cpo=TRUE),
+#            control.inla = list(diagonal = 100, strategy = "gaussian",
+#                                int.strategy = "eb"),
+#            verbose=TRUE)
+# 
+# m.ex3= inla(formula,
+#             data = inla.stack.data(stk),
+#             control.predictor = list(A = inla.stack.A(stk),compute = TRUE),
+#             control.compute = list(dic=TRUE,cpo=TRUE),
+#             control.mode = list(result = m.ex2, restart = TRUE),
+#             verbose=TRUE)
 toc()
 
-save(m.ex2,spde.spatial.vcm, stk, hh_extract,file = 'results_INLA_ST2_draft.RData')
+save(m.ex2,spde.spatial.vcm, stk, hh_extract,
+     file = 'results_INLA_ST0_draft.RData')
 
