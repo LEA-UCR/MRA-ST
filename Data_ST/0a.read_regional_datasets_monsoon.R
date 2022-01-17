@@ -112,7 +112,7 @@ for (VARname in VARnames) {
 }
 
 
-
+save(ts_Regional, file="ts_RegionalMensual-Luis0122.Rdata")
 #save(ua_Regional, file="ua_RegionalMensualMonson.Rdata")
 #save(va_Regional, file="va_RegionalMensualMonson.Rdata")
 #save(hus_Regional, file="hus_RegionalMensualMonson.Rdata")

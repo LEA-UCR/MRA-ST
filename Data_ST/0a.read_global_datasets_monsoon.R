@@ -112,10 +112,10 @@ for (VARNAME in VARNAMES) {
 }
 
 
-# save(OMEGA_Global, file="OMEGA_Global-Shu.Rdata")
-# save(U_Global, file="U_Global-Shu.Rdata")
-# save(V_Global, file="V_Global-Shu.Rdata")
-# save(TREFHT_Global, file="TREFHT_Global-Shu.Rdata")
+save(OMEGA_Global, file="OMEGA_Global-Luis0122.Rdata")
+save(U_Global, file="U_Global-Luis0122.Rdata")
+save(V_Global, file="V_Global-Luis0122.Rdata")
+save(TREFHT_Global, file="TREFHT_Global-Luis0122.Rdata")
 
 
 

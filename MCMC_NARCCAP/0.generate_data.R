@@ -5,7 +5,7 @@ library(sp)
 variable_narccap <- 'Temp' # Temp/Prec
 
 if(variable_narccap=='Temp'){
-  load('./data_narccap/TStotalmensual.RData')
+  load('./data_narccap/TStotalmensual-Luis0122.RData')
   base_cruda <- TS_tot
   rm(TS_tot)
 }else{
@@ -16,7 +16,7 @@ if(variable_narccap=='Temp'){
 
 base_recortada <- base_cruda %>% 
   filter(lat >= 20, lat <= 40, lon >= 240, lon <= 265) %>%
-  filter(Year >= 1996)
+  filter(Year >= 1990)
 rm(base_cruda)
 
 #base_recortada <- base_recortada %>%
@@ -43,6 +43,8 @@ dataset <- datos_filt
 hh <- SpatialPointsDataFrame(coords = coordenadas,data = datos_filt)
 proj4string(hh) <- '+proj=longlat +datum=WGS84'
 bordes <- bbox(hh)
+hh_sf <- st_as_sf(hh)
+crsglobal <- CRS('+proj=longlat +datum=WGS84')
 
 ##ST_PCA
 #http://homepage.ntu.edu.tw/~wenthung/R_Spatial/RLab_6.html
@@ -61,8 +63,8 @@ bordes <- bbox(hh)
 #   st_drop_geometry()
 # pca_X_t = prcomp(X_t, scale. = TRUE)
 
-load('~/../Emuladores/PCA/index_stPCA.Rdata')
-load('~/../Emuladores/PCA/PCA_data.Rdata')
+#load('~/../Emuladores/PCA/index_stPCA.Rdata')
+#load('~/../Emuladores/PCA/PCA_data.Rdata')
 
-save(dataset, hh, file=paste0("data_narccap/dataset",
-                              variable_narccap,".Rdata"))
+save(dataset, hh_sf, pointsglobal, file=paste0("data_narccap/dataset",
+                              variable_narccap,"-Luis0122.Rdata"))

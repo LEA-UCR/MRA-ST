@@ -1,6 +1,8 @@
 ---
 title: "Resultados y Diagnósticos-INLA-ST"
-output: html_notebook
+output:
+  html_document:
+    df_print: paged
 ---
 
 ```{r}
@@ -63,38 +65,148 @@ ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()
 ```
 
+Densidad posterior del parámetro autoregresivo:
+```{r}
+base_grafico_rho <- bind_rows(data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`,type='Rho0'))
+
+ggplot(data = base_grafico_rho,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+```
+
 Gráficos de observaciones vs predicciones:
 ```{r}
-index.pred <- inla.stack.index(stack = stk, tag = "est")$data
+index.pred <- inla.stack.index(stack = stk.est, tag = "est")$data
 Resumen_fitted <- m.ex2$summary.fitted.values[index.pred,]
+hh_sf <- hh_sf %>% bind_cols(Resumen_fitted)
 
-inla.qmarginal(c(0.025,0.975),m.ex2$marginals.fitted.values[[1]])
+#inla.qmarginal(c(0.025,0.975),m.ex2$marginals.fitted.values[[1]])
 
-hh_extract$Yhat <- Resumen_fitted$mean
-hh_extract$Ysd <- Resumen_fitted$sd
-hh_extract$Ymed <- Resumen_fitted$`0.5quant`
-hh_extract$That <- exp(log(hh_extract$TREFHT)+hh_extract$Yhat)
-hh_extract$Tmed <- exp(log(hh_extract$TREFHT)+hh_extract$Ymed)
-hh_extract$TShat <- exp(Resumen_fitted$sd)
+hh_sf <- hh_sf %>% rename(Yhat = mean, Ysd = sd, Ymed = `0.5quant`, 
+                          Y025 = `0.025quant`, Y975 = `0.975quant`)
+hh_sf <- hh_sf %>% mutate(That = exp(log(TREFHT)+Yhat), 
+                          Tmed = exp(log(TREFHT)+Ymed),
+                          T025 = exp(log(TREFHT)+Y025),
+                          T975 = exp(log(TREFHT)+Y975),
+                          TR = T975-T025)
 
 
-hh_sf <- st_as_sf(hh_extract)
-grafico1 <- ggplot(data = hh_sf)+geom_sf(aes(col = ts))+
+hh_sf_03 <- hh_sf %>% filter(Year == 1999, Month == 3)
+
+grafico1 <- ggplot(data = hh_sf_03)+geom_sf(aes(col = ts))+
   theme_bw()+
   scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
 
-grafico2 <- ggplot(data = hh_sf)+geom_sf(aes(col = That))+
+grafico2 <- ggplot(data = hh_sf_03)+geom_sf(aes(col = That))+
   theme_bw()+
   scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
 
-grafico3 <- ggplot(data = hh_sf)+geom_sf(aes(col = Tmed))+
+grafico3 <- ggplot(data = hh_sf_03)+geom_sf(aes(col = Tmed))+
   theme_bw()+
   scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
 
 
-grafico4 <- ggplot(data = hh_sf)+geom_sf(aes(col = TShat))+
+grafico4 <- ggplot(data = hh_sf_03)+geom_sf(aes(col = TR))+
   theme_bw()+
   scale_color_distiller(type = 'seq',direction = 1)
 
-graficos_Yposterior <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+graficos_Marzo1999 <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
 ```
+
+```{r}
+hh_sf_06 <- hh_sf %>% filter(Year == 1999, Month == 6)
+
+grafico1 <- ggplot(data = hh_sf_06)+geom_sf(aes(col = ts))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico2 <- ggplot(data = hh_sf_06)+geom_sf(aes(col = That))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico3 <- ggplot(data = hh_sf_06)+geom_sf(aes(col = Tmed))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+
+grafico4 <- ggplot(data = hh_sf_06)+geom_sf(aes(col = TR))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Junio1999 <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+
+```{r}
+hh_sf_09 <- hh_sf %>% filter(Year == 1999, Month == 9)
+
+grafico1 <- ggplot(data = hh_sf_09)+geom_sf(aes(col = ts))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico2 <- ggplot(data = hh_sf_09)+geom_sf(aes(col = That))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico3 <- ggplot(data = hh_sf_09)+geom_sf(aes(col = Tmed))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+
+grafico4 <- ggplot(data = hh_sf_09)+geom_sf(aes(col = TR))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Sep1999 <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+
+```{r}
+hh_sf_11 <- hh_sf %>% filter(Year == 1999, Month == 11)
+
+grafico1 <- ggplot(data = hh_sf_11)+geom_sf(aes(col = ts))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico2 <- ggplot(data = hh_sf_11)+geom_sf(aes(col = That))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+grafico3 <- ggplot(data = hh_sf_11)+geom_sf(aes(col = Tmed))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+
+grafico4 <- ggplot(data = hh_sf_11)+geom_sf(aes(col = TR))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+graficos_Nov1999 <- grid.arrange(grafico1,grafico2,grafico3,grafico4)
+```
+
+Metricas:
+```{r}
+MSE_month <- hh_sf %>% filter(Year==1999) %>% mutate(dif2 = (ts-That)^2) %>%
+  st_drop_geometry() %>%
+  group_by(Month) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_month)
+MSE_year <- hh_sf %>% mutate(dif2 = (ts-That)^2) %>%
+  st_drop_geometry() %>%
+  group_by(Year) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_year)
+IS_month <- hh_sf %>% filter(Year==1999) %>% mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-That)*(That<T025)+ 
+                     (2/0.05)*(That-T975)*(That>T975)) %>%
+    st_drop_geometry() %>%
+  group_by(Month) %>% summarise(IS95 = mean(IS))
+
+IS_year <- hh_sf %>% mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-That)*(That<T025)+ 
+                     (2/0.05)*(That-T975)*(That>T975)) %>%
+    st_drop_geometry() %>%
+  group_by(Year) %>% summarise(IS95 = mean(IS))
+
+knitr::kable(IS_month)
+
+knitr::kable(IS_year)
+```
+
