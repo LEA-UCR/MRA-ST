@@ -67,10 +67,10 @@ A.PC0 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind)
 # A.PC0p = inla.spde.make.A(mesh, loc=locations_rp,group = hh_pred$ind)
 
 
-# idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
-#                                n.group = timesn)
-# A.PC1 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
-#                          weights = hh_extract$OMEGA)
+idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
+                                n.group = timesn)
+A.PC1 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind, 
+                          weights = hh_est$U)
 # idx.PC2 = inla.spde.make.index("idx.PC2", n.spde = spde.spatial.vcm$n.spde,
 #                                n.group = timesn)
 # A.PC2 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
@@ -95,8 +95,9 @@ df.covar.expanded = data.frame(intercept=1,
 ## INLA 
 
 stk.est <- inla.stack(data=list(Y=hh_est$Y), tag='est',
-                  A=list(A.PC0,1),
-                  effects=list(idx.PC0=idx.PC0, 
+                  A=list(A.PC0,A.PC1,1),
+                  effects=list(idx.PC0=idx.PC0,
+                               idx.PC1 = idx.PC1,
                                df.covar.expanded))
 
 # stk.pred <- inla.stack(data=list(Y=NA), tag='pred',
@@ -117,8 +118,10 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 #https://avianecologist.com/tag/inla/
 
-formula <- Y ~ 0 + intercept +
+formula <- Y ~ 0 + intercept + U+
   f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
+    control.group = list(model = "ar1", hyper = rprior))+
+  f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
     control.group = list(model = "ar1", hyper = rprior))
 
 
@@ -157,5 +160,5 @@ m.ex2= inla(formula,
 toc()
 
 save(m.ex2,spde.spatial.vcm, stk.est, hh_sf,
-     file = 'results_INLA_ST0_draft.RData')
+     file = 'results_INLA_ST12_draft.RData')
 
