@@ -44,8 +44,8 @@ max.edge = expected.range/5
 mesh =
   inla.mesh.2d(loc=unique(locations),
                max.edge=c(.6, 5) * max.edge)
-#plot(mesh, asp=1)
-#points(locations, col='red')
+plot(mesh, asp=1)
+points(locations, col='red')
 
 rho.vcm <- c(700,0.5)
 sigma.vcm <- c(0.1/0.31,0.01) 
@@ -70,7 +70,14 @@ A.PC0 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind)
 idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
                                 n.group = timesn)
 A.PC1 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind, 
-                          weights = hh_est$U)
+                          weights = hh_est$OMEGA)
+
+#idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde)
+#A.PC1 = inla.spde.make.A(mesh, loc=locations_r, 
+#                          weights = hh_est$OMEGA)
+
+
+
 # idx.PC2 = inla.spde.make.index("idx.PC2", n.spde = spde.spatial.vcm$n.spde,
 #                                n.group = timesn)
 # A.PC2 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
@@ -118,9 +125,9 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 #https://avianecologist.com/tag/inla/
 
-formula <- Y ~ 0 + intercept + U+
-  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
-    control.group = list(model = "ar1", hyper = rprior))+
+formula <- Y ~ 0 + intercept + OMEGA +
+  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group)+#,
+    #control.group = list(model = "ar1", hyper = rprior))+
   f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
     control.group = list(model = "ar1", hyper = rprior))
 
@@ -160,5 +167,5 @@ m.ex2= inla(formula,
 toc()
 
 save(m.ex2,spde.spatial.vcm, stk.est, hh_sf,
-     file = 'results_INLA_ST12_draft.RData')
+     file = 'results_INLA_ST15_draft.RData')
 
