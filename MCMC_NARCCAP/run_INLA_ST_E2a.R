@@ -119,7 +119,7 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 formula <- Y ~ 0 + intercept + OMEGA +
     f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
-      control.group = list(model = "iid", hyper = rprior))+
+      control.group = list(model = "iid", hyper = rprior))
 #  f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
 #    control.group = list(model = "iid", hyper = rprior))
 
