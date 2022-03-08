@@ -1,5 +1,5 @@
 ---
-title: "Resultados y Diagnósticos-INLA-ST_E1a"
+title: "Resultados y Diagnósticos-INLA-ST_E0"
 output:
   html_document:
     df_print: paged
@@ -16,13 +16,13 @@ library(latex2exp)
 
 Carga de resultados:
 ```{r}
-load('results/results_INLA_ST_E1a.RData')
+load('results/results_INLA_ST_E0a.RData')
 ```
 
 Densidades posteriores de Betas fijos
 ```{r}
-base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type='beta0'),
-                                data.frame(m.ex2$marginals.fixed$OMEGA,type='beta1'))
+base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type='beta0'))
+#                                data.frame(m.ex2$marginals.fixed$OMEGA,type='beta1'))
 #                                data.frame(m.ex2$marginals.fixed$U,type='beta2'),
 #                                data.frame(m.ex2$marginals.fixed$V,type='beta3'))
 
@@ -30,35 +30,7 @@ ggplot(data = base_grafico_betas,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
 ```
 
-Densidades posteriores de parámetros de rango:
-```{r}
-outputPC1.field <- inla.spde2.result(inla=m.ex2,
-                                   name="idx.PC0", spde=spde.spatial.vcm, do.transf=TRUE)
-#outputPC2.field <- inla.spde2.result(inla=m.ex2,
-#                                   name="idx.PC1", spde=spde.spatial.vcm, do.transf=TRUE)
-#outputPC3.field <- inla.spde2.result(inla=m.ex2,
-#                                   name="idx.PC3", spde=spde.spatial.vcm, do.transf=TRUE)
 
-base_grafico_rangos <- bind_rows(data.frame(outputPC1.field$marginals.range.nominal$range.nominal.1,type='PC0'))#,                                 data.frame(outputPC2.field$marginals.range.nominal$range.nominal.1,type='PC1'))
-
-#base_grafico_rangos <- bind_rows(data.frame(                                 data.frame(outputPC2.field$marginals.range.nominal$range.nominal.1,type='PC1')))
-
-
-ggplot(data = base_grafico_rangos,mapping = aes(x = x,y = y)) + geom_line()+
-  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
-```
-
-Densidades posteriores de parámetros de varianza por efecto aleatorio:
-```{r}
-base_grafico_varianzas <- bind_rows(data.frame(outputPC1.field$marginals.variance.nominal$variance.nominal.1,type='PC0'))#,
-#data.frame(outputPC2.field$marginals.variance.nominal$variance.nominal.1,type='PC1'))
-
-#base_grafico_varianzas <- bind_rows(
-#data.frame(outputPC2.field$marginals.variance.nominal$variance.nominal.1,type='PC1'))
-
-ggplot(data = base_grafico_varianzas,mapping = aes(x = x,y = y)) + geom_line()+
-  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
-```
 Densidad posterior del efecto nugget:
 ```{r}
 base_grafico_nugget <- data.frame(inla.tmarginal(function(x) 1/x, m.ex2$marginals.hyper$`Precision for the Gaussian observations`))
@@ -67,16 +39,6 @@ ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()
 ```
 
-Densidad posterior del parámetro autoregresivo:
-```{r}
- base_grafico_rho <- bind_rows(data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`,type='Rho0'))#,
-#                      data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC1`,type='Rho1'))
-
-#base_grafico_rho <- bind_rows(data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC1`,type='Rho1'))
-
-ggplot(data = base_grafico_rho,mapping = aes(x = x,y = y)) + geom_line()+
-  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
-```
 
 Gráficos de observaciones vs predicciones:
 ```{r}
@@ -158,5 +120,9 @@ IS_year <- hh_sf %>% mutate(IS = (T975-T025)+
 knitr::kable(IS_month)
 
 knitr::kable(IS_year)
+```
+Elapsed time:
+```{r}
+show(time_elapsed)
 ```
 

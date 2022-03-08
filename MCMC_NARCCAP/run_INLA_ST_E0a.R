@@ -117,11 +117,11 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 #https://avianecologist.com/tag/inla/
 
-formula <- Y ~ 0 + intercept + OMEGA +
-  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
-    control.group = list(model = "ar1", hyper = rprior))
-#  f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
-#    control.group = list(model = "iid"))
+formula <- Y ~ 0 + intercept #+ OMEGA 
+  #  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
+  #    control.group = list(model = "iid", hyper = rprior))+
+  #f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
+  #  control.group = list(model = "iid", hyper = rprior))
 
 
 # formula <- Y ~ 0 + intercept +  OMEGA + U + V +
@@ -135,7 +135,6 @@ formula <- Y ~ 0 + intercept + OMEGA +
 tic()
 m.ex2= inla(formula,
             data = inla.stack.data(stk.est),
-#            control.family = list(hyper = list(theta1= list(fixed = T, initial = -1e-8))),
             control.predictor = list(A = inla.stack.A(stk.est),compute = TRUE),
             control.compute = list(dic=TRUE,cpo=TRUE),
             control.inla = list(diagonal = 100, strategy = "gaussian",
@@ -161,5 +160,5 @@ toc(log = T)
 
 time_elapsed <- tic.log(format = T)
 save(m.ex2,spde.spatial.vcm, stk.est, hh_sf,time_elapsed,
-     file = './results/results_INLA_ST_E1a.RData')
+     file = './results/results_INLA_ST_E0a.RData')
 
