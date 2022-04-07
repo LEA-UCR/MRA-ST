@@ -53,6 +53,20 @@ V_Global <- V_Global %>% filter(lat >= blatitude[1],
                                           lon >= blongitude[1],
                                           lon <= blongitude[2])
 #load('/home/Emuladores/datos/resolucion/altitude.Rdata')
+load('pr_RegionalMensual-Luis0122.Rdata')
+pr_Regional <- pr_Regional %>% filter(Year %in% period)
+#load('/home/Emuladores/datos/TREFHT_Global-Shu.Rdata') 
+load('PRECL_Global-Luis0122.RData') 
+PRECL_Global <- PRECL_Global %>% filter(Year %in% period)
+PRECL_Global <- PRECL_Global %>% filter(lat >= blatitude[1],
+                                          lat <= blatitude[2],
+                                          lon >= blongitude[1],
+                                          lon <= blongitude[2])
+
+PRECL_Global <-  PRECL_Global %>% group_by(Year,Month,lon,lat) %>%
+  summarise(PRECL_M = sum(PRECL)) %>%
+  ungroup() %>% rename(PRECL = PRECL_M)
+
 
 
 pointsglobal_pre <- TREFHT_Global %>% dplyr::select(lon,lat) %>% distinct(lon,lat)
@@ -95,18 +109,32 @@ OMEGA_Global <- OMEGA_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 #PSL_Global <- PSL_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 U_Global <- U_Global %>% left_join(pointsglobal_tb,by = c("lon", "lat"))
 V_Global <- V_Global %>%  left_join(pointsglobal_tb,by = c("lon", "lat"))
+PRECL_Global <- PRECL_Global %>%  left_join(pointsglobal_tb,by = c("lon", "lat"))
 #altitude_Global <- pointsglobal_tb %>%  left_join(altitude,by = c("lon", "lat"))
 
 ts_Regional <- ts_Regional %>% left_join(pointsregional_tb,by = c("lon", "lat")) %>%
   na.omit()
+pr_Regional <- pr_Regional %>% left_join(pointsregional_tb,by = c("lon", "lat")) %>%
+  na.omit()
 
-TS_tot <- ts_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
+
+# TS_tot <- ts_Regional %>% left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
+#   left_join(OMEGA_Global,by = c("Year", "Month", "indicegrid")) %>%
+# #  left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
+#   dplyr::select(Year,Month,ts,lat=lat.x,lon=lon.x,indicegrid,
+#          TREFHT,OMEGA,U,V)
+
+TS_tot <- ts_Regional %>% 
+  left_join(pr_Regional,by = c("Year", "Month", "lat","lon","indicegrid"))%>%
+  left_join(TREFHT_Global,by = c("Year", "Month", "indicegrid"))%>%
   left_join(OMEGA_Global,by = c("Year", "Month", "indicegrid")) %>%
-#  left_join(PSL_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(U_Global,by = c("Year", "Month", "indicegrid")) %>%
   left_join(V_Global,by = c("Year", "Month", "indicegrid")) %>%
-  dplyr::select(Year,Month,ts,lat=lat.x,lon=lon.x,indicegrid,
-         TREFHT,OMEGA,U,V)
+  left_join(PRECL_Global,by = c("Year", "Month", "indicegrid")) %>%
+  dplyr::select(Year,Month,ts,pr,lat=lat.x,lon=lon.x,indicegrid,
+                TREFHT,OMEGA,U,V,PRECL)
 
 
 ## PCA 

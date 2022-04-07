@@ -22,7 +22,7 @@ load('results/results_INLA_ST_E1a.RData')
 Densidades posteriores de Betas fijos
 ```{r}
 base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type='beta0'),
-                                data.frame(m.ex2$marginals.fixed$OMEGA,type='beta1'))
+                                data.frame(m.ex2$marginals.fixed$lPREC_T,type='beta1'))
 #                                data.frame(m.ex2$marginals.fixed$U,type='beta2'),
 #                                data.frame(m.ex2$marginals.fixed$V,type='beta3'))
 
@@ -160,3 +160,7 @@ knitr::kable(IS_month)
 knitr::kable(IS_year)
 ```
 
+Elapsed time:
+```{r}
+show(time_elapsed)
+```

@@ -28,7 +28,11 @@ base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type=
 
 ggplot(data = base_grafico_betas,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = m.ex2$marginals.fixed$intercept)
+inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.fixed$intercept)
 ```
+
 Densidades posteriores de parámetros de rango:
 ```{r}
 outputPC1.field <- inla.spde2.result(inla=m.ex2,
@@ -45,6 +49,9 @@ base_grafico_rangos <- bind_rows(data.frame(outputPC1.field$marginals.range.nomi
 
 ggplot(data = base_grafico_rangos,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = outputPC1.field$marginals.range.nominal$range.nominal.1)
+inla.qmarginal(c(0.025,0.975),marginal = outputPC1.field$marginals.range.nominal$range.nominal.1)
 ```
 
 Densidades posteriores de parámetros de varianza por efecto aleatorio:
@@ -57,6 +64,9 @@ base_grafico_varianzas <- bind_rows(data.frame(outputPC1.field$marginals.varianc
 
 ggplot(data = base_grafico_varianzas,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = outputPC1.field$marginals.variance.nominal$variance.nominal.1)
+inla.qmarginal(c(0.025,0.975),marginal = outputPC1.field$marginals.variance.nominal$variance.nominal.1)
 ```
 Densidad posterior del parámetro autoregresivo:
 ```{r}
@@ -67,6 +77,10 @@ Densidad posterior del parámetro autoregresivo:
 
 ggplot(data = base_grafico_rho,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`)
+inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`)
+
 ```
 
 Densidad posterior del efecto nugget:
@@ -75,6 +89,9 @@ base_grafico_nugget <- data.frame(inla.tmarginal(function(x) 1/x, m.ex2$marginal
 
 ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
   theme_bw()
+
+inla.emarginal(fun = function(x) 1/x,marginal = m.ex2$marginals.hyper$`Precision for the Gaussian observations`)
+1/inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.hyper$`Precision for the Gaussian observations`)
 ```
 
 
@@ -128,7 +145,10 @@ grafico_Rango <- ggplot(data = hh_sf_baseplot_Rango)+geom_sf(aes(col = Value))+
 
 grafico_Temp
 grafico_Rango
-```
+
+#ggsave(filename = 'graficoTemps.png',plot = grafico_Temp)
+#gsave(filename = 'graficoRango.png',plot = grafico_Rango)
+```   
 
 
 Metricas:
