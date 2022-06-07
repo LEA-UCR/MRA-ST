@@ -1,0 +1,251 @@
+---
+title: "Reporte"
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    toc: true
+    toc_float: true
+params: 
+  output_dir: "../reports"
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(sp)
+library(sf)
+library(gridExtra)
+library(INLA)
+library(spdplyr)
+```
+
+## Detalles de la simulación
+
+```{r}
+#i=1
+scenario<-paste0("sim_res_prediction/results",i,model,type,nres,"_prediction.Rdata")
+print(scenario)
+load(scenario)
+print(unlist(labels))
+print(total_time)
+#print(burn)
+ev_rho<-!is.null(mod$marginals.hyperpar$`GroupRho for idx.PC0`)
+ev_rho
+```
+
+## Plots
+
+### Betas
+
+```{r}
+base_grafico_betas <- bind_rows(data.frame(mod$marginals.fixed$intercept,type='beta0'))
+
+ggplot(data = base_grafico_betas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+#Efectos fijos
+mod$summary.fixed
+```
+
+### Phi
+
+```{r}
+outputPC1.field <- inla.spde2.result(inla=mod,
+                                     name="idx.PC0", spde=spde.spatial.vcm, do.transf=TRUE)
+
+
+base_grafico_rangos <- bind_rows(data.frame(outputPC1.field$marginals.range.nominal$range.nominal.1,type='PC1'))
+
+ggplot(data = base_grafico_rangos,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.zmarginal(outputPC1.field$marginals.range.nominal[[1]])
+```
+
+### Sigma2
+
+```{r}
+base_grafico_varianzas <- bind_rows(data.frame(outputPC1.field$marginals.variance.nominal$variance.nominal.1,type='PC1'))
+
+ggplot(data = base_grafico_varianzas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.zmarginal(outputPC1.field$marginals.variance.nominal[[1]])
+```
+
+### Rho
+
+
+```{r, eval=ev_rho}
+base_grafico_rho <- bind_rows(data.frame(mod$marginals.hyperpar$`GroupRho for idx.PC0`,type='PC0'))
+
+ggplot(data = base_grafico_rho,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.zmarginal(mod$marginals.hyperpar$`GroupRho for idx.PC0`)
+```
+
+### tau (Nugget)
+
+```{r}
+
+base_grafico_nugget <- data.frame(inla.tmarginal(function(x) 1/x, mod$marginals.hyper$`Precision for the Gaussian observations`))
+
+ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()
+
+inla.zmarginal(base_grafico_nugget)
+```
+
+### Y
+
+Porcentaje de Y observado que cae dentro del intervalo de predicción con 95%.
+
+```{r plot6}
+
+load(paste0("sim_data/dataset",i,type,nres,".Rdata"))
+ntime <- length(unique(hh$time))
+train.ntime <- floor(ntime*5/6)
+
+index.pred <- inla.stack.index(stk, "data")$data
+Resumen_fitted <- mod$summary.fitted.values[index.pred,]
+
+hh_sf <- st_as_sf(hh)
+hh_sf <- hh_sf %>% bind_cols(Resumen_fitted)
+hh_sf <- hh_sf %>% rename(Yhat = mean, Ysd = sd, Ymed = `0.5quant`, 
+                          Y025 = `0.025quant`, Y975 = `0.975quant`)
+hh_sf <- hh_sf %>% mutate(That = exp(log(Ts)+Yhat), 
+                          Tmed = exp(log(Ts)+Ymed),
+                          T025 = exp(log(Ts)+Y025),
+                          T975 = exp(log(Ts)+Y975),
+                          TR = T975-T025)
+
+Y.in.interval<-map_dbl(1:length(hh_sf$Y),
+    ~{between(hh_sf$Y[.],hh_sf$Y025[.],hh_sf$Y975[.])})
+mean(Y.in.interval)
+
+T.in.interval<-map_dbl(1:length(hh_sf$Y),
+    ~{between(hh_sf$Tw[.],hh_sf$T025[.],hh_sf$T975[.])})
+mean(T.in.interval)
+
+
+```
+
+## Tw (exp(Y))
+
+
+T=1
+
+```{r}
+
+hh_sf_train12 <- hh_sf %>% filter(time %in% c(1,2))
+hh_sf_test12 <- hh_sf %>% filter(time %in% c(train.ntime+c(1,2)))
+
+
+hh_sf_baseplot <- bind_rows(hh_sf_train12,hh_sf_test12) %>%
+  dplyr::select(Tw,That,Tmed,TR,time) %>%
+  rename(Observed = Tw, Mean = That, Median = Tmed, QRange = TR) %>%
+  pivot_longer(names_to = 'Variable', cols = all_of(c('Observed', 'Mean', 'Median', 'QRange')), values_to = 'Value')
+
+hh_sf_baseplot_Temp <- hh_sf_baseplot %>% filter(Variable!='QRange') 
+
+grafico_Temp <- ggplot(data = hh_sf_baseplot_Temp)+geom_sf(aes(col = Value))+
+  facet_grid(rows = vars(time),cols = vars(Variable))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+hh_sf_baseplot_Rango <- hh_sf_baseplot %>% filter(Variable=='QRange') 
+
+grafico_Rango <- ggplot(data = hh_sf_baseplot_Rango)+geom_sf(aes(col = Value))+
+  facet_wrap(facets = vars(time),ncol = 4)+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+grafico_Temp
+grafico_Rango
+```
+
+## Tw (exp(Y)) by time
+
+
+```{r, fig.width = 10, fig.width = 20}
+graficos_Yposterior_same.scale <- list()
+for (j in 1:(ntime/12)){
+
+hh_sf_j <- hh_sf %>% filter(time %in% c((12*(j-1)+1):(12*j)))
+
+T.min<-min(hh_sf_j$Tw,hh_sf_j$That,hh_sf_j$Tmed)
+T.max<-max(hh_sf_j$Tw,hh_sf_j$That,hh_sf_j$Tmed)
+grafico1 <- ggplot(data = hh_sf_j)+geom_sf(aes(col = Tw))+
+  theme_bw()+
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(T.min,T.max)) +
+  facet_wrap(~time,  ncol=ntime)
+
+grafico2 <- ggplot(data = hh_sf_j)+geom_sf(aes(col = That))+
+  theme_bw() +
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(T.min,T.max)) +
+  facet_wrap(~time,  ncol=ntime)
+
+grafico3 <- ggplot(data = hh_sf_j)+geom_sf(aes(col = Tmed))+
+  theme_bw() +  
+  scale_color_gradient(low = "yellow", high = "blue",
+                       limits = c(T.min,T.max)) +
+  facet_wrap(~time,  ncol=ntime)
+
+grafico4 <- ggplot(data = hh_sf_j)+geom_sf(aes(col = TR))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1) +
+  facet_wrap(~time,  ncol=ntime)
+                                            
+graficos_Yposterior_same.scale[[j]] <- grid.arrange(grafico1,grafico2,grafico3,grafico4,
+                                               nrow=4)
+}
+
+```
+
+
+
+## Métricas (resumen)
+```{r}
+
+MSE_time_ent <- hh_sf %>% 
+  mutate(dif2 = (Tw-That)^2, train = ifelse(time<=train.ntime,"train","test")) %>%
+  st_drop_geometry() %>%
+  group_by(train) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_time_ent)
+
+IS_time_ent <- hh_sf %>% #filter(Year==1999) %>% 
+  mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-Tw)*(Tw<T025)+ 
+                     (2/0.05)*(Tw-T975)*(Tw>T975),
+         train = ifelse(time<=train.ntime,"train","test")) %>%
+    st_drop_geometry() %>%
+  group_by(train) %>% summarise(IS95 = mean(IS))
+
+knitr::kable(IS_time_ent)
+```
+
+## Métricas (por tiempo)
+
+```{r}
+MSE_time_ent <- hh_sf %>% 
+  mutate(dif2 = (Tw-That)^2) %>%
+  st_drop_geometry() %>%
+  group_by(time) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_time_ent)
+
+IS_time_ent <- hh_sf %>% #filter(Year==1999) %>% 
+  mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-Tw)*(Tw<T025)+ 
+                     (2/0.05)*(Tw-T975)*(Tw>T975)) %>%
+    st_drop_geometry() %>%
+  group_by(time) %>% summarise(IS95 = mean(IS))
+
+knitr::kable(IS_time_ent)
+
+```
