@@ -7,8 +7,8 @@ function.to.gen.data <- function(nDEP,nres,i){
   DEP <- c("Exponential","Matern")
   Phi <- c(0.1)
   Nu <-  0.8
-  Sigma <- 0.001
-  sigma2 <- c(0.001)
+  Sigma <- 0.2
+  sigma2 <- c(2)
   res <- list(c(25,10),c(40,20),c(55,25))    #res <- list(c(75,25),c(100,40))
   ## i is the identifier for this data generation
   set.seed(1*i) 
@@ -17,17 +17,17 @@ function.to.gen.data <- function(nDEP,nres,i){
   ###  REAL VALUES FOR PARAMETERS  ###
   ### ############################ ###
   #Non-spatial parameters
-  beta_0g=5.65
-  beta_0r=5.6
+  beta_0g=1
+  beta_0r=2
   
-  beta_1g=0.015
-  beta_1r=0.01
+  beta_1g=1.5
+  beta_1r=2
   #Spatial structure parameters
   type <- DEP[nDEP]
   phi <- Phi
   nu <- Nu  # roughness parameter for error
   sigma2 <- sigma2
-  tau2 <- 5000
+  tau2 <- 3
   
   ### ############################ ###
   ###   Grid size and definition   ###
@@ -87,12 +87,10 @@ function.to.gen.data <- function(nDEP,nres,i){
   beta_0w <- crossprod(chol(beta0.cov),matrix(rnorm(n), nrow=n))
   
   # Model T(w) - T(s)
-  logTw = beta_0r + beta_0w + beta_1r * X1g.r + gamma_r + epsilon_gr
-  logTs = beta_0g + beta_1g * X1g.r + epsilon_gr
-  Y <- logTw-logTs
-  Tw <- exp(logTw)
-  Ts <- exp(logTs)
-  dataset<-tibble(Y=as.vector(Y), Tw=Tw, Ts=Ts, X1=X1g.r) 
+  Tw = beta_0r + beta_0w + beta_1r * X1g.r + gamma_r + epsilon_gr
+  Ts = beta_0g + beta_1g * X1g.r + epsilon_gr
+  Y <- Tw-Ts
+  dataset<-tibble(Y=as.vector(Y),X1=X1g.r) 
   
   ### ############################ ###
   ###        Save data sets        ###
