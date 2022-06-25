@@ -15,12 +15,11 @@ Regional Climate Models (RCM) describe the medium scale global atmospheric and o
 ## Data
 
 * Code to read global and regional data sets from [NARCCAP](https://www.earthsystemgrid.org/project/narccap.html) can be found in this [folder](https://github.com/LEA-UCR/MRA-ST/tree/master/Data_ST)
-* Code to create the design matrices for MCMC can be found in this [file](https://github.com/LEA-UCR/MRA-ST/blob/master/Data_ST/create.designMatricesMCMC.R)
 
 ## Code
 
 * Code to run the analysis section from the paper can be found in this [file](https://github.com/LEA-UCR/MRA-ST/tree/master/MCMC_NARCCAP).
-* Code to run two simulations included in the paper can be found in this [file]()
+* Code to run two simulations included in the paper can be found in this [file](https://github.com/LEA-UCR/MRA-ST/tree/master/sim)
 
 
 
