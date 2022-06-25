@@ -1,0 +1,186 @@
+---
+title: "Resultados y Diagnósticos-INLA-ST_E0"
+output:
+  html_document:
+    df_print: paged
+---
+
+```{r}
+library(tidyverse)
+library(sp)
+library(sf)
+library(gridExtra)
+library(INLA)
+library(latex2exp)
+```
+
+Carga de resultados:
+```{r}
+load('results/results_INLA_ST_E0c.RData')
+```
+
+Densidades posteriores de Betas fijos
+```{r}
+base_grafico_betas <- bind_rows(data.frame(m.ex2$marginals.fixed$intercept,type='beta0'))
+#                                data.frame(m.ex2$marginals.fixed$OMEGA,type='beta1'))
+#                                data.frame(m.ex2$marginals.fixed$U,type='beta2'),
+#                                data.frame(m.ex2$marginals.fixed$V,type='beta3'))
+
+ggplot(data = base_grafico_betas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = m.ex2$marginals.fixed$intercept)
+inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.fixed$intercept)
+```
+
+Densidades posteriores de parámetros de rango:
+```{r}
+outputPC1.field <- inla.spde2.result(inla=m.ex2,
+                                   name="idx.PC0", spde=spde.spatial.vcm, do.transf=TRUE)
+#outputPC2.field <- inla.spde2.result(inla=m.ex2,
+#                                   name="idx.PC1", spde=spde.spatial.vcm, do.transf=TRUE)
+#outputPC3.field <- inla.spde2.result(inla=m.ex2,
+#                                   name="idx.PC3", spde=spde.spatial.vcm, do.transf=TRUE)
+
+base_grafico_rangos <- bind_rows(data.frame(outputPC1.field$marginals.range.nominal$range.nominal.1,type='PC0'))#,                                 data.frame(outputPC2.field$marginals.range.nominal$range.nominal.1,type='PC1'))
+
+#base_grafico_rangos <- bind_rows(data.frame(                                 data.frame(outputPC2.field$marginals.range.nominal$range.nominal.1,type='PC1')))
+
+
+ggplot(data = base_grafico_rangos,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = outputPC1.field$marginals.range.nominal$range.nominal.1)
+inla.qmarginal(c(0.025,0.975),marginal = outputPC1.field$marginals.range.nominal$range.nominal.1)
+```
+
+Densidades posteriores de parámetros de varianza por efecto aleatorio:
+```{r}
+base_grafico_varianzas <- bind_rows(data.frame(outputPC1.field$marginals.variance.nominal$variance.nominal.1,type='PC0'))#,
+#data.frame(outputPC2.field$marginals.variance.nominal$variance.nominal.1,type='PC1'))
+
+#base_grafico_varianzas <- bind_rows(
+#data.frame(outputPC2.field$marginals.variance.nominal$variance.nominal.1,type='PC1'))
+
+ggplot(data = base_grafico_varianzas,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = outputPC1.field$marginals.variance.nominal$variance.nominal.1)
+inla.qmarginal(c(0.025,0.975),marginal = outputPC1.field$marginals.variance.nominal$variance.nominal.1)
+```
+Densidad posterior del parámetro autoregresivo:
+```{r}
+ base_grafico_rho <- bind_rows(data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`,type='Rho0'))#,
+#                      data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC1`,type='Rho1'))
+
+#base_grafico_rho <- bind_rows(data.frame(m.ex2$marginals.hyperpar$`GroupRho for idx.PC1`,type='Rho1'))
+
+ggplot(data = base_grafico_rho,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()+facet_wrap(vars(type),nrow = 2,scales = 'free')
+
+inla.emarginal(fun = function(x) x,marginal = m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`)
+inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.hyperpar$`GroupRho for idx.PC0`)
+
+```
+
+Densidad posterior del efecto nugget:
+```{r}
+base_grafico_nugget <- data.frame(inla.tmarginal(function(x) 1/x, m.ex2$marginals.hyper$`Precision for the Gaussian observations`))
+
+ggplot(data = base_grafico_nugget,mapping = aes(x = x,y = y)) + geom_line()+
+  theme_bw()
+
+inla.emarginal(fun = function(x) 1/x,marginal = m.ex2$marginals.hyper$`Precision for the Gaussian observations`)
+1/inla.qmarginal(c(0.025,0.975),marginal = m.ex2$marginals.hyper$`Precision for the Gaussian observations`)
+```
+
+
+Gráficos de observaciones vs predicciones:
+```{r}
+index.pred <- inla.stack.index(stack = stk.est, tag = "est")$data
+Resumen_fitted <- m.ex2$summary.fitted.values[index.pred,]
+hh_sf <- hh_sf %>% bind_cols(Resumen_fitted)
+
+#inla.qmarginal(c(0.025,0.975),m.ex2$marginals.fitted.values[[1]])
+
+hh_sf <- hh_sf %>% rename(Yhat = mean, Ysd = sd, Ymed = `0.5quant`, 
+                          Y025 = `0.025quant`, Y975 = `0.975quant`)
+hh_sf <- hh_sf %>% mutate(That = exp(log(TREFHT)+Yhat), 
+                          Tmed = exp(log(TREFHT)+Ymed),
+                          T025 = exp(log(TREFHT)+Y025),
+                          T975 = exp(log(TREFHT)+Y975),
+                          TR = T975-T025)
+
+
+hh_sf_03 <- hh_sf %>% filter(Year == 1999, Month == 3) %>% 
+  mutate(Fecha = '1999-03')
+
+hh_sf_06 <- hh_sf %>% filter(Year == 1999, Month == 6) %>% 
+  mutate(Fecha = '1999-06')
+
+hh_sf_09 <- hh_sf %>% filter(Year == 1999, Month == 9) %>% 
+  mutate(Fecha = '1999-09')
+
+hh_sf_11 <- hh_sf %>% filter(Year == 1999, Month == 11) %>% 
+  mutate(Fecha = '1999-11')
+
+hh_sf_baseplot <- bind_rows(hh_sf_03,hh_sf_06,hh_sf_09,hh_sf_11) %>%
+  dplyr::select(ts,That,Tmed,TR,Fecha) %>%
+  rename(Observed = ts, Mean = That, Median = Tmed, QRange = TR) %>%
+  pivot_longer(names_to = 'Variable', cols = all_of(c('Observed', 'Mean', 'Median', 'QRange')), values_to = 'Value')
+
+hh_sf_baseplot_Temp <- hh_sf_baseplot %>% filter(Variable!='QRange') 
+
+grafico_Temp <- ggplot(data = hh_sf_baseplot_Temp)+geom_sf(aes(col = Value))+
+  facet_grid(rows = vars(Fecha),cols = vars(Variable))+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',palette = 'YlOrRd',direction = 1)
+
+hh_sf_baseplot_Rango <- hh_sf_baseplot %>% filter(Variable=='QRange') 
+
+grafico_Rango <- ggplot(data = hh_sf_baseplot_Rango)+geom_sf(aes(col = Value))+
+  facet_wrap(facets = vars(Fecha),ncol = 4)+
+  theme_bw()+
+  scale_color_distiller(type = 'seq',direction = 1)
+
+grafico_Temp
+grafico_Rango
+
+#ggsave(filename = 'graficoTemps.png',plot = grafico_Temp)
+#gsave(filename = 'graficoRango.png',plot = grafico_Rango)
+```   
+
+
+Metricas:
+```{r}
+MSE_month <- hh_sf %>% filter(Year==1999) %>% mutate(dif2 = (ts-That)^2) %>%
+  st_drop_geometry() %>%
+  group_by(Month) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_month)
+MSE_year <- hh_sf %>% mutate(dif2 = (ts-That)^2) %>%
+  st_drop_geometry() %>%
+  group_by(Year) %>% summarise(MSE = mean(dif2))
+
+knitr::kable(MSE_year)
+IS_month <- hh_sf %>% filter(Year==1999) %>% mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-ts)*(ts<T025)+ 
+                     (2/0.05)*(ts-T975)*(ts>T975)) %>%
+    st_drop_geometry() %>%
+  group_by(Month) %>% summarise(IS95 = mean(IS))
+
+IS_year <- hh_sf %>% mutate(IS = (T975-T025)+
+                   (2/0.05)*(T025-ts)*(ts<T025)+ 
+                     (2/0.05)*(ts-T975)*(ts>T975)) %>%
+    st_drop_geometry() %>%
+  group_by(Year) %>% summarise(IS95 = mean(IS))
+
+knitr::kable(IS_month)
+
+knitr::kable(IS_year)
+```
+Elapsed time:
+```{r}
+show(time_elapsed)
+```
+

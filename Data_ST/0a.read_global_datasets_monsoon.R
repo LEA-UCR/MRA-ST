@@ -10,7 +10,8 @@ library(PCICt)
 
 ## GLOBAL VARIABLES
 
-VARNAMES <- c("OMEGA","TREFHT","U","V")
+#VARNAMES <- c("OMEGA","TREFHT","U","V","PRECL")
+VARNAMES <- c("PRECL")
 blatitude <- c(19.12639, 74.40000)
 blongitude <- c(198.6576, 326.4000)
 dirbase <- "~/../Emuladores/datos/datosglobal_update14062021/"
@@ -22,8 +23,9 @@ for (VARNAME in VARNAMES) {
   #fecha <- '1870-01-01'
   var <- NULL
   dataset.time <- str_sub(listfilesg, start= -22,end = -19)
+  #dataset.time <- str_sub(listfilesg, start= -28,end = -25)
   
-  if(VARNAME=="TREFHT"){
+  if(VARNAME=="TREFHT" || VARNAME=="PRECL"){
     
     #Anteriormente 2:lenght(listfilesg)
     for (i in 1:length(listfilesg)) {
@@ -112,10 +114,10 @@ for (VARNAME in VARNAMES) {
 }
 
 
-# save(OMEGA_Global, file="OMEGA_Global-Shu.Rdata")
-# save(U_Global, file="U_Global-Shu.Rdata")
-# save(V_Global, file="V_Global-Shu.Rdata")
-# save(TREFHT_Global, file="TREFHT_Global-Shu.Rdata")
-
+save(OMEGA_Global, file="OMEGA_Global-Luis0122.Rdata")
+save(U_Global, file="U_Global-Luis0122.Rdata")
+save(V_Global, file="V_Global-Luis0122.Rdata")
+save(TREFHT_Global, file="TREFHT_Global-Luis0122.Rdata")
+save(PRECL_Global, file='PRECL_Global-Luis0122.RData')
 
 

@@ -1,70 +1,51 @@
-args = commandArgs(trailingOnly=TRUE)
-if(length(args)==0){
-  variable_narccap <- 'Temp' # Temp or Prec
-  type<-"Exponential"
-  model<-"SVC"
-  analysis<-"M3"
-  datasetfile=paste0("data_narccap/dataset",
-                     variable_narccap,".Rdata")
-} else {
-  variable_narccap <-args[1]
-  type<-args[2]
-  model<-args[3]
-  analysis<-args[4]
-  datasetfile=paste0("data_narccap/dataset",
-                     variable_narccap,".Rdata")
-}
-
-# i<-1:100
-# type<-'Exponential', "Matern"
-# model<-'SVC', "SVI"
-# analysis<-"M1: likelihood", "M2: FSA", "M3: MRA2"
-
-source("1.MRA_resolution_general.R")
-source('covariances.R')
-source('likelihoodK_general.R')
 library(INLA)
 library(sf)
-library(MCMCpack)
-library(truncdist)
-library(invgamma)
-library(Matrix)
-library(mvtnorm)
-library(truncnorm)
-library(CholWishart)
-library(tmvtnorm)
+library(tidyverse)
+# library(MCMCpack)
+# library(truncdist)
+# library(invgamma)
+# library(Matrix)
+# library(mvtnorm)
+# library(truncnorm)
+# library(CholWishart)
+# library(tmvtnorm)
 library(tictoc)
 
+variable_narccap <- 'Temp' # Temp or Prec
+datasetfile=paste0("data_narccap/dataset",
+                   variable_narccap,"-Luis0122.Rdata")
+load(datasetfile)
 
-nCov_f <- 4
-nCov_v <- 3
+hh_sf <- hh_sf %>% filter(Year>=1990)
 
-nlevels_P <- 2
-nlevels_A <- 2
+fechas <- hh_sf %>% st_drop_geometry() %>%  
+  dplyr::select(Year,Month) %>%
+  distinct() %>% arrange(Year,Month) %>%
+  mutate(ind = 1:n())
 
-aa_P<-gen_resolution(datasetfile,nCov_v,nlevels_P)
-aa_A<-gen_resolution(datasetfile,nCov_v,nlevels_A)
 
-Qlist <- aa_A[[3]]
-nn <- aa_A[[4]]
-hh <- Qlist[[nn+2]]
+hh_sf <- hh_sf %>% left_join(fechas,by = c('Year','Month'))
+timesn <- max(hh_sf$ind)
 
-hh_extract <- hh %>% filter(Year>=1997 & Year < 1999)
-hh_pred <- hh %>% filter(Year == 1999)
+hh_est <- hh_sf %>% mutate(Y = ifelse(Year<1999,Y,NA))
+
 #hh_extract <- hh_extract %>% mutate(Y=ifelse(Year==1999,NA,Y))
 #hh_extract <- hh
-locations <- st_coordinates(hh_extract$geometry)
+#locations <- st_coordinates(hh_extract$geometry)
+locations <- st_coordinates(pointsglobal)
 colnames(locations) <- c('lon','lat')
+
 
 ##MESH##
 expected.range = 1500
 max.edge = expected.range/5  
 
+
 mesh =
   inla.mesh.2d(loc=unique(locations),
                max.edge=c(.6, 5) * max.edge)
-#plot(mesh, asp=1)
-#points(locations, col='red')
+plot(mesh, asp=1)
+points(locations, col='red')
 
 rho.vcm <- c(700,0.5)
 sigma.vcm <- c(0.1/0.31,0.01) 
@@ -74,26 +55,29 @@ spde.spatial.vcm = inla.spde2.pcmatern(mesh=mesh,
                                        prior.range=rho.vcm,
                                        prior.sigma=sigma.vcm)  
 
-
-
-fechas <- hh_extract %>% st_drop_geometry() %>%  
-  dplyr::select(Year,Month) %>%
-  distinct() %>% arrange(Year,Month) %>%
-  mutate(ind = 1:n())
-
-timesn <- dim(fechas)[1]
-
-hh_extract <- hh_extract %>% left_join(fechas,by = c('Year','Month'))
-
-
 idx.PC0 = inla.spde.make.index("idx.PC0", n.spde = spde.spatial.vcm$n.spde,
                                n.group = timesn)
-A.PC0 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind)
 
-# idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
-#                                n.group = timesn)
-# A.PC1 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
-#                          weights = hh_extract$OMEGA)
+locations_r <- st_coordinates(hh_est$geometry)
+colnames(locations_r) <- c('lon','lat')
+A.PC0 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind)
+
+# locations_rp <- st_coordinates(hh_pred$geometry)
+# colnames(locations_rp) <- c('lon','lat')
+# A.PC0p = inla.spde.make.A(mesh, loc=locations_rp,group = hh_pred$ind)
+
+
+idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
+                                n.group = timesn)
+A.PC1 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind, 
+                          weights = hh_est$OMEGA)
+
+#idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde)
+#A.PC1 = inla.spde.make.A(mesh, loc=locations_r, 
+#                          weights = hh_est$OMEGA)
+
+
+
 # idx.PC2 = inla.spde.make.index("idx.PC2", n.spde = spde.spatial.vcm$n.spde,
 #                                n.group = timesn)
 # A.PC2 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind, 
@@ -104,18 +88,30 @@ A.PC0 = inla.spde.make.A(mesh, loc=locations,group = hh_extract$ind)
 #                          weights = hh_extract$V)
 
 df.covar.expanded = data.frame(intercept=1,
-                               OMEGA = hh_extract$OMEGA,
-                               U = hh_extract$U,
-                               V = hh_extract$V,
-                               Month = factor(hh_extract$Month))
+                               OMEGA = hh_est$OMEGA,
+                               U = hh_est$U,
+                               V = hh_est$V,
+                               Month = factor(hh_est$Month))
 
+# df.covar.expanded_pred = data.frame(intercept=1,
+#                                OMEGA = hh_pred$OMEGA,
+#                                U = hh_pred$U,
+#                                V = hh_pred$V,
+#                                Month = factor(hh_pred$Month))
 
 ## INLA 
 
-stk <- inla.stack(data=list(Y=hh_extract$Y), tag='est',
-                  A=list(A.PC0,1),
-                  effects=list(idx.PC0=idx.PC0, 
+stk.est <- inla.stack(data=list(Y=hh_est$Y), tag='est',
+                  A=list(A.PC0,A.PC1,1),
+                  effects=list(idx.PC0=idx.PC0,
+                               idx.PC1 = idx.PC1,
                                df.covar.expanded))
+
+# stk.pred <- inla.stack(data=list(Y=NA), tag='pred',
+#                       A=list(A.PC0p,1),
+#                       effects=list(idx.PC0=idx.PC0, 
+#                                    df.covar.expanded_pred))
+
 
 
 # stk <- inla.stack(data=list(Y=hh_extract$Y), tag='est',
@@ -129,9 +125,11 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 #https://avianecologist.com/tag/inla/
 
-formula <- Y ~ 0 + intercept +
-  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
-    control.group = list(model = "ar1", hyper = rprior))
+formula <- Y ~ 0 + intercept + OMEGA +
+#  f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
+#    control.group = list(model = "iid", hyper = rprior))+
+  f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
+    control.group = list(model = "iid", hyper = rprior))
 
 
 # formula <- Y ~ 0 + intercept +  OMEGA + U + V +
@@ -144,8 +142,8 @@ formula <- Y ~ 0 + intercept +
 
 tic()
 m.ex2= inla(formula,
-            data = inla.stack.data(stk),
-            control.predictor = list(A = inla.stack.A(stk),compute = TRUE),
+            data = inla.stack.data(stk.est),
+            control.predictor = list(A = inla.stack.A(stk.est),compute = TRUE),
             control.compute = list(dic=TRUE,cpo=TRUE),
             control.inla = list(diagonal = 100, strategy = "gaussian",
                                 int.strategy = "eb"),
@@ -168,6 +166,6 @@ m.ex2= inla(formula,
 #             verbose=TRUE)
 toc()
 
-save(m.ex2,spde.spatial.vcm, stk, hh_extract,
-     file = 'results_INLA_ST0_draft.RData')
+save(m.ex2,spde.spatial.vcm, stk.est, hh_sf,
+     file = 'results_INLA_ST17_draft.RData')
 
