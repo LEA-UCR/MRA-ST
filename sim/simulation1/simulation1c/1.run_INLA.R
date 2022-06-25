@@ -9,10 +9,10 @@ for(i in 1:10){
   
 model <- "INLA" # "MRA2" # varycoef
 #i <- 1 # simulation ID # from 1 to 10
-DEP <- "Matern"    #"Exponential" # "Matern"  ## types
+DEP <- "Exponential"    #"Exponential" # "Matern"  ## types
 type <- DEP  
 Nu <- ifelse(DEP=="Exponential",1/2,0.8)
-nres <-3 # or 2 or 3
+nres <- 1 # or 2 or 3
 
 
 ####################################################################
@@ -77,8 +77,8 @@ mesh =
 
 #rho.vcm <- c(,0.9)
 #sigma.vcm <- c(5,0.9) 
-rho.vcm <- c(0.12,0.5)
-sigma.vcm <- c(0.0012,0.5)
+rho.vcm <- c(0.15,0.5)
+sigma.vcm <- c(0.25,0.5)
 
 alpha <- Nu+1
 spde.spatial.vcm = inla.spde2.pcmatern(mesh=mesh, 
