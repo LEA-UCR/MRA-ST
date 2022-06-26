@@ -62,7 +62,7 @@ A.PC0 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind)
 idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde,
                                n.group = timesn)
 A.PC1 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind, 
-                         weights = hh_est$lPREC_T)
+                         weights = hh_est$OMEGA)
 
 #idx.PC1 = inla.spde.make.index("idx.PC1", n.spde = spde.spatial.vcm$n.spde)
 #A.PC1 = inla.spde.make.A(mesh, loc=locations_r, 
@@ -80,7 +80,7 @@ A.PC1 = inla.spde.make.A(mesh, loc=locations_r,group = hh_est$ind,
 #                          weights = hh_extract$V)
 
 df.covar.expanded = data.frame(intercept=1,
-                               lPREC_T = hh_est$lPREC_T,
+                               OMEGA = hh_est$OMEGA,
                                U = hh_est$U,
                                V = hh_est$V,
                                Month = factor(hh_est$Month))
@@ -117,7 +117,7 @@ rprior <- list(theta = list(prior = "pccor1", param = c(0, 0.9)))
 
 #https://avianecologist.com/tag/inla/
 
-formula <- Y ~ 0 + intercept + lPREC_T +
+formula <- Y ~ 0 + intercept + OMEGA +
   f(idx.PC0, model = spde.spatial.vcm,group = idx.PC0.group,
     control.group = list(model = "ar1", hyper = rprior))
 #  f(idx.PC1, model = spde.spatial.vcm,group = idx.PC1.group,
