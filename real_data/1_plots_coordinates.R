@@ -4,7 +4,7 @@ library(dplyr)
 
 load(file="./data/real_data.Rdata")
 
-#monsoon
+#monsoon region
 lat.mon=c(21.45146, 39.99363)
 lon.mon=c(-119.99590 , -95.00983)
 
@@ -39,11 +39,13 @@ plot_1999 + geom_vline(xintercept = lon.mon, col = "red")+
 data_monson <- data_month %>% filter(between(lon, lon.mon[1],lon.mon[2]),
                                      between(lat, lat.mon[1],lat.mon[2]))
 
-#prueba con datos de 1999
+#prueba con datos de 1990 a 1999
 
-data_monson <- data_monson %>% filter(year %in% 1999:1999)
+data_monson <- data_monson %>% filter(year %in% 1990:1999)
 
-data_monson_reduced <- data_monson %>% filter(month %in% 1:1)
+data_monson_reduced <- data_monson %>% filter(year %in% 1990,
+                                              month %in% 1:1)
+dim(data_monson_reduced)
 
 real_data_geo <- data_monson_reduced %>% mutate(lon=lon+360) %>% select(lon,lat)
 
@@ -74,7 +76,7 @@ assign = st_nn(real_data_geo_sf, hh_sf_reduced, k = 1, parallel = 4)
 
 data_monson %>% select(year,month) %>% unique() %>% dim()
 
-ntime = 12
+ntime = 120
 index<-rep(cbind(unlist(assign)),ntime)
 
 length(index)
@@ -85,16 +87,28 @@ data_monson_1 <- data_monson %>% mutate(assign = index)
 #
 range(data_monson_1$assign)
 range(hh_sf_reduced$id)
-test <- data_monson_1 %>% left_join(hh_sf, 
+data_monson_join <- data_monson_1 %>% left_join(hh_sf, 
                             by = c("year" = "Year",
                                    "month" = "Month",
                                    "assign" = "id"))
 
-test <- test %>%  mutate(dif = (temp-ts))
+data_monson_join <- data_monson_join %>%  mutate(dif = (temp-ts),
+                                                 dif2 = dif^2)
 
-hist(test$dif)
+hist(data_monson_join$dif)
+hist(data_monson_join$dif2)
 
-plot_temp <- test %>% filter(year == 1999) %>%
+resumen_year <- data_monson_join %>% na.omit() %>% 
+  group_by(year) %>% summarise(DIF=mean(dif),
+                                     DIF2=mean(dif2))
+
+resumen_month <- data_monson_join %>% na.omit() %>% 
+  group_by(month) %>% summarise(DIF=mean(dif),
+                               DIF2=mean(dif2))
+resumen_year
+resumen_month
+
+plot_temp <- data_monson_join %>% filter(year == 1999) %>%
   ggplot() +             # plot points
   geom_point(aes(x = lon,y = lat,       # lon and lat
                  colour = temp),size = 2.5)+
@@ -108,7 +122,7 @@ plot_temp <- test %>% filter(year == 1999) %>%
               ylim = c(20, 55))  +      # zoom in
   theme_bw() 
 
-plot_ts <- test %>% filter(year == 1999) %>%
+plot_ts <- data_monson_join %>% filter(year == 1999) %>%
   ggplot() +             # plot points
   geom_point(aes(x = lon,y = lat,       # lon and lat
                  colour = ts),size = 2.5)+
@@ -122,7 +136,7 @@ plot_ts <- test %>% filter(year == 1999) %>%
               ylim = c(20, 55))  +      # zoom in
   theme_bw() 
 
-plot_dif <- test %>% filter(year == 1999) %>%
+plot_dif <- data_monson_join %>% filter(year == 1999) %>%
   ggplot() +             # plot points
   geom_point(aes(x = lon,y = lat,       # lon and lat
                  colour = dif),size = 2.5)+
@@ -136,9 +150,6 @@ plot_dif <- test %>% filter(year == 1999) %>%
               ylim = c(20, 55))  +      # zoom in
   theme_bw() 
 
-plot_temp
-plot_ts
-plot_dif
 
 ggsave(plot_temp, 
        filename = paste0("./figures/plot_temp.jpg"), 
