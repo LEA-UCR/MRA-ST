@@ -3,6 +3,8 @@ library(sf)
 library(tidyverse)
 library(tictoc)
 
+# Estimates the Model 1 in Section 5 of Barboza et al, 2022.
+
 variable_narccap <- 'Temp' # Temp or Prec
 datasetfile=paste0("data_narccap/dataset",
                    variable_narccap,"-Luis0122.Rdata")

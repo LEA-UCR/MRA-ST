@@ -14,7 +14,7 @@ library(INLA)
 library(latex2exp)
 ```
 
-Carga de resultados:
+Calcula métricas y resultados del escenario 3 en Barboza et al, 2022. Carga de resultados:
 ```{r}
 load('results/results_INLA_ST_E1a.RData')
 ```
