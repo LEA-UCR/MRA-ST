@@ -2,7 +2,7 @@
 here::i_am("README.md")
 
 
-for(i in c(1:1)){
+for(i in c(1:10)){
   ####################################################################
   ######### Simulation options: model, i, type1, type2, nAMA #########
   ####################################################################
@@ -12,6 +12,8 @@ for(i in c(1:1)){
   DEP <- "Matern"    #"Exponential" # "Matern"  ## types
   type <- DEP  
   Nu <- ifelse(DEP=="Exponential",1/2,0.8)
+  
+  nVAR <-3
   nres <-1 # or 2 or 3
   Mesh <- "g"  
 #  nrho <- 2
@@ -22,7 +24,7 @@ for(i in c(1:1)){
   ####################################################################
   
   datasetfile=paste0("sim_data/dataset",
-                     i,type,nres,
+                     i,type,nVAR,nres,
                      ".Rdata")
   load(datasetfile)
   source('functions/packages.R')
@@ -30,21 +32,22 @@ for(i in c(1:1)){
   #########################################
   # hay que modificar de aqui en adelante #
   #########################################
-  source("functions/1.MRA_resolution_general.R")
+  #source("functions/1.MRA_resolution_general.R")
   source('functions/covariances.R')
   source('functions/likelihoodK_general.R')
   
   
   # 
-  nCov_f <- 1 # fixed betas
-  nCov_v <- 1 # spatially varying betas
-  nlevels_P <- ifelse(model=="MRA2",2,1) # MRA number for phi
+  #nCov_f <- 1 # fixed betas
+  #nCov_v <- 1 # spatially varying betas
+  #nlevels_P <- ifelse(model=="MRA2",2,1) # MRA number for phi
   # nlevels_A <- ifelse(model=="MRA2",2,1) # MRA number for A (betas)
-  aa_P<-gen_resolution(datasetfile,nCov_v,nlevels_P)
+  #aa_P<-gen_resolution(datasetfile,nCov_v,nlevels_P)
   # aa_A<-gen_resolution(datasetfile,nCov_v,nlevels_A)
-  Qlist <- aa_P[[3]]
-  nn <- aa_P[[4]]
-  hh <- Qlist[[nn+2]]
+  #Qlist <- aa_P[[3]]
+  #nn <- aa_P[[4]]
+  #hh <- Qlist[[nn+2]]
+  hh <- st_as_sf(hh)
   N <- dim(hh)[1] 
   
   locations_r <- as.matrix(hh$coords_r)
@@ -159,7 +162,7 @@ for(i in c(1:1)){
   
   labels = list(model,type,nres,Mesh)
   save(mod,spde.spatial.vcm,stk,labels, total_time,file=paste0("sim_res_prediction/results",
-                                                               i,model,type,nres,Mesh,"_prediction.Rdata"))
+                                                               i,model,type,nVAR,nres,Mesh,"_prediction.Rdata"))
   
   ####################################################################
   ############################### Fin ################################

@@ -11,7 +11,7 @@ beta_0g=5.707;beta_0r=5.706#;beta_1g=0.2;beta_1r=0.15
 beta0.real <- beta_0r-beta_0g
 #beta1.real <- beta_1r-beta_1g
 phi.real <- 5
-sigma.real <- 0.0003
+#sigma.real <- 0.0003
 tau.real <- 1/700000
 rho.real <- 0.8
 parametro.real <- c(beta0.real,phi.real,sigma.real,tau.real,rho.real)
@@ -19,7 +19,14 @@ parametro <- c("beta0","phi","sigma","tau","rho")
 
 model <- "INLA" 
 type <- "Matern" 
+
+Sigma <- c(0.003,0.0003,0.00003)
+
+
+nVAR <- 2
+sigma.real <- Sigma[nVAR]
 nres <- 3       # 1 or 2
+
 Mesh <- "g"
 
 coef.summary.list<- list()
@@ -27,10 +34,10 @@ prediction.MSE.summary.list<- list()
 prediction.IS.summary.list<- list()
 time.exec <- as.numeric()
 
-for(i in 1:30){
+for(i in 1:10){
   print(i)
   ##parameter estimation
-  scenario<-paste0("sim_res_prediction/results",i,model,type,nres,Mesh,"_prediction.Rdata")
+  scenario<-paste0("sim_res_prediction/results",i,model,type,nVAR,nres,Mesh,"_prediction.Rdata")
   load(scenario)
   
   ev_rho<-!is.null(mod$marginals.hyperpar$`GroupRho for idx.PC0`)
@@ -59,7 +66,7 @@ for(i in 1:30){
   
   ##prediction
   
-  load(paste0("sim_data/dataset",i,type,nres,".Rdata"))
+  load(paste0("sim_data/dataset",i,type,nVAR,nres,".Rdata"))
   ntime <- length(unique(hh$time))
   train.ntime <- floor(ntime*5/6)
   
@@ -117,7 +124,7 @@ prediction.table<-cbind(prediction.MSE.summary.list1,prediction.IS.summary.list1
 time.exec <- as.data.frame(time.exec)
 colnames(time.exec) <- paste0("AR",nres)
 
-write_csv(coef.summary.list1, file = paste0("metrica_AR",nres,".csv"))
-write_csv(prediction.table, file = paste0("metrica_pred_AR",nres,".csv"))
-write_csv(time.exec, file = paste0("time_exec_AR",nres,".csv"))
+write_csv(coef.summary.list1, file = paste0("output/metrica_AR",nVAR,nres,".csv"))
+write_csv(prediction.table, file = paste0("output/metrica_pred_AR",nVAR,nres,".csv"))
+write_csv(time.exec, file = paste0("output/time_exec_AR",nVAR,nres,".csv"))
 

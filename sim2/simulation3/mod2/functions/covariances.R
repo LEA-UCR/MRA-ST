@@ -1,6 +1,6 @@
 library(pdist)
 library(fields)
-library(RandomFields)
+#library(RandomFields)
 library(furrr)
 
 corrMaternduo <- function(points_sf1,points_sf2,

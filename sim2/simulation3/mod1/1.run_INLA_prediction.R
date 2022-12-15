@@ -2,7 +2,7 @@
 here::i_am("README.md")
 
 
-for(i in 4:10){
+for(i in 1:10){
 ####################################################################
 ######### Simulation options: model, i, type1, type2, nAMA #########
 ####################################################################
@@ -13,8 +13,8 @@ DEP <- "Matern"    #"Exponential" # "Matern"  ## types
 type <- DEP  
 Nu <- 1
 
-nVAR <-1
-nres <-1 # or 2 or 3
+nVAR <-3
+nres <-3 # or 2 or 3
 Mesh <- "g"  
 
 ####################################################################
@@ -32,7 +32,7 @@ library(INLA)
 #########################################
 # hay que modificar de aqui en adelante #
 #########################################
-source("functions/1.MRA_resolution_general.R")
+#source("functions/1.MRA_resolution_general.R")
 source('functions/covariances.R')
 source('functions/likelihoodK_general.R')
 #source('functions/L_functions.R')
@@ -41,15 +41,18 @@ source('functions/likelihoodK_general.R')
 #source('functions/MLE_computation_varycoef.R')
 #source('functions/PCprior.R')
 # 
-nCov_f <- 2 # fixed betas
-nCov_v <- 1 # spatially varying betas
-nlevels_P <- ifelse(model=="MRA2",2,1) # MRA number for phi
-# nlevels_A <- ifelse(model=="MRA2",2,1) # MRA number for A (betas)
-aa_P<-gen_resolution(datasetfile,nCov_v,nlevels_P)
-# aa_A<-gen_resolution(datasetfile,nCov_v,nlevels_A)
-Qlist <- aa_P[[3]]
-nn <- aa_P[[4]]
-hh <- Qlist[[nn+2]]
+# nCov_f <- 2 # fixed betas
+# nCov_v <- 1 # spatially varying betas
+# nlevels_P <- ifelse(model=="MRA2",2,1) # MRA number for phi
+# # nlevels_A <- ifelse(model=="MRA2",2,1) # MRA number for A (betas)
+# aa_P<-gen_resolution(datasetfile,nCov_v,nlevels_P)
+# # aa_A<-gen_resolution(datasetfile,nCov_v,nlevels_A)
+# Qlist <- aa_P[[3]]
+# nn <- aa_P[[4]]
+# hh <- Qlist[[nn+2]]
+# N <- dim(hh)[1] 
+
+hh <- st_as_sf(hh)
 N <- dim(hh)[1] 
 
 
