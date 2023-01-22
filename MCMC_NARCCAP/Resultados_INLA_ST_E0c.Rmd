@@ -1,5 +1,5 @@
 ---
-title: "Resultados y Diagnósticos-INLA-ST_E0"
+title: "Resultados y Diagnósticos-INLA-ST_E0C-MODELO_2"
 output:
   html_document:
     df_print: paged
@@ -12,6 +12,7 @@ library(sf)
 library(gridExtra)
 library(INLA)
 library(latex2exp)
+library(nngeo)
 ```
 
 Calcula métricas y resultados del escenario 2 en Barboza et al, 2022. Carga de resultados:
@@ -184,3 +185,73 @@ Elapsed time:
 show(time_elapsed)
 ```
 
+Carga de datos reales:
+```{r}
+load(file="../real_data/data/real_data.Rdata")
+```
+
+Depuración datos reales:
+```{r}
+data_month <- data_month %>% mutate(temp = temp + 273.15)
+#monsoon region
+lat.mon=c(21.45146, 39.99363)
+lon.mon=c(-119.99590 , -95.00983)
+
+data_monson <- data_month %>% filter(between(lon, lon.mon[1],lon.mon[2]),
+                                     between(lat, lat.mon[1],lat.mon[2]))
+
+data_monson <- data_monson %>% filter(year %in% 1990:1999)
+
+data_monson_reduced <- data_monson %>% filter(year %in% 1990,
+                                              month %in% 1:1)
+
+real_data_geo <- data_monson_reduced %>% mutate(lon=lon+360) %>% select(lon,lat)
+
+real_data_geo_sf <- st_as_sf(real_data_geo, coords = c("lon", "lat"), crs = 4326)
+
+hh_sf <- hh_sf %>% group_by(Year, Month) %>% mutate(id = 1:n()) %>% ungroup()
+
+hh_sf_reduced <- hh_sf %>% filter(Year == 1999,
+                                  Month == 1)
+
+coordenadas_regional <- st_coordinates(hh_sf_reduced)
+
+assign = st_nn(real_data_geo_sf, hh_sf_reduced, k = 1, parallel = 4)    
+
+#data_monson %>% select(year,month) %>% unique() %>% dim()
+
+ntime = 120
+index<-rep(cbind(unlist(assign)),ntime)
+
+data_monson_1 <- data_monson %>% mutate(assign = index)
+
+data_monson_join <- data_monson_1 %>% left_join(hh_sf, 
+                            by = c("year" = "Year",
+                                   "month" = "Month",
+                                   "assign" = "id"))
+
+data_monson_join <- data_monson_join %>%  mutate(dif_regional = (temp-ts),
+                                                 dif_regional_2 = dif_regional^2)
+
+data_monson_join <- data_monson_join %>%  mutate(dif_emul = (temp-That),
+                                                 dif_emul_2 = dif_emul^2,
+                                                 IS_emul = (T975-T025)+
+                                                   (2/0.05)*(T025-temp)*(temp<T025)+
+                                                   (2/0.05)*(temp-T975)*(temp>T975))
+
+resumenObs_year <- data_monson_join %>% na.omit() %>% 
+  group_by(year) %>% summarise(DIF2_regional=mean(dif_regional_2),
+                               DIF2_emulador=mean(dif_emul_2),
+                               IS_emulador=mean(IS_emul))
+
+
+resumenObs_month <- data_monson_join %>% na.omit() %>% 
+  group_by(month) %>% summarise(DIF2_regional=mean(dif_regional_2),
+                                DIF2_emulador=mean(dif_emul_2),
+                                IS_emulador=mean(IS_emul))
+
+knitr::kable(resumenObs_year)
+knitr::kable(resumenObs_month)
+
+write_csv(x = resumenObs_year,file = 'tabla_res_2.csv')
+```

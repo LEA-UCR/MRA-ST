@@ -1,0 +1,28 @@
+---
+title: "Crea_tabla_resultados"
+format: html
+editor: visual
+---
+
+Paquetes:
+
+```{r}
+library(tidyverse)
+library(kableExtra)
+```
+
+```{r}
+tabla_res_0 <- read_csv(file = 'tabla_res_0.csv')
+tabla_res_1 <- read_csv(file = 'tabla_res_1.csv')
+tabla_res_2 <- read_csv(file = 'tabla_res_2.csv')
+tabla_res_3 <- read_csv(file = 'tabla_res_3.csv')
+```
+
+Crea tabla 1 de Barboza et al, 2022:
+
+```{r}
+resultados <- bind_cols(tabla_res_0,tabla_res_1[,3:4],tabla_res_2[,3:4],tabla_res_3[,3:4])
+colnames(resultados) <- c('Year','MSE_RCM','MSE_E0','IS_E0','MSE_E1','IS_E1','MSE_E2','IS_E2','MSE_E3','IS_E3')
+kable(resultados,digits = 2)
+#kable(resultados,digits = 2,format = 'latex')
+```
