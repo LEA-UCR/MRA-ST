@@ -3,7 +3,7 @@ library(kableExtra)
 library(data.table)
 
 
-table11<- read.csv("output/metrica_AR11.csv")
+table11<- read.csv("zoutput/metrica_AR11.csv")
 table12<- read.csv("output/metrica_AR12.csv")
 table13<- read.csv("output/metrica_AR13.csv")
 table21<- read.csv("output/metrica_AR21.csv")
@@ -23,23 +23,22 @@ pred31<-read.csv("output/metrica_pred_AR31.csv")
 pred32<-read.csv("output/metrica_pred_AR32.csv")
 pred33<-read.csv("output/metrica_pred_AR33.csv")
 
-pred.table<-rbind(pred11,pred12,pred13,
-                  pred21,pred22,pred23,
-                  pred31,pred32,pred33)
+pred.table1 <- cbind(pred11[,-3],pred12[,-c(1,3)],pred13[,-c(1,3)])
+pred.table2 <- cbind(pred21[,-3],pred22[,-c(1,3)],pred23[,-c(1,3)])
+pred.table3 <- cbind(pred31[,-3],pred32[,-c(1,3)],pred33[,-c(1,3)])
 
-label<-rep(c("pred11","pred12","pred13",
-             "pred21","pred22","pred23",
-             "pred31","pred32","pred33"),each=2)
-
-
+pred.table <- rbind(pred.table1,pred.table2,pred.table3)
+label<-rep(c("1","2", "3"),each=2)
 pred.table<-cbind(label,pred.table)
 
-pred.table %>% kbl(digits=4,row.names=FALSE)
+pred.table %>%  kbl(digits=4,row.names=FALSE) %>%
+  add_header_above( c("Scenario" = 2, "res1" = 2, "res2" = 2, "res3" = 2))
+
 
 pred.table %>% kbl(digits=4,format="latex",row.names=FALSE)%>%
+  add_header_above( c("Scenario" = 2, "res1" = 2, "res2" = 2, "res3" = 2)) %>%
   kable_minimal() %>%
   kable_paper(full_width = F)
-
 
 time11<-read.csv("output/time_exec_AR11.csv")
 time12<-read.csv("output/time_exec_AR12.csv")
