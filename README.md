@@ -1,4 +1,4 @@
-# Spatio-temporal Downscaling Emulator for Regional Climate Models: a Comparative Study
+# Spatio-temporal Downscaling Emulator for Regional Climate Models
 
 This is the accompanying GitHub repository to a paper by [Luis A. Barboza](https://github.com/luisbarboza27), [Shu Wei Chou](https://github.com/shuwei325) and [Marcela Alfaro Córdoba](https://github.com/malfaro2). The preprint can be found in [here](https://arxiv.org/abs/2206.03914).
 
